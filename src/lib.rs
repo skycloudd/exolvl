@@ -18,116 +18,116 @@ pub fn parse_exolvl(data: &str) -> Result<ExoLvl, Box<dyn std::error::Error>> {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ExoLvl {
-    local_level: LocalLevel,
-    level_data: LevelData,
-    author_replay: String,
+    pub local_level: LocalLevel,
+    pub level_data: LevelData,
+    pub author_replay: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct LocalLevel {
-    id: String,
-    version: i32,
-    name: String,
-    thumbnail: String,
-    creation_date: DateTime<Utc>,
-    update_date: DateTime<Utc>,
-    author_time: i32,
-    author_lap_times: Vec<i32>,
-    silver_medal_time: i32,
-    gold_medal_time: i32,
-    laps: i32,
-    private_level: bool,
+pub struct LocalLevel {
+    pub id: String,
+    pub version: i32,
+    pub name: String,
+    pub thumbnail: String,
+    pub creation_date: DateTime<Utc>,
+    pub update_date: DateTime<Utc>,
+    pub author_time: i32,
+    pub author_lap_times: Vec<i32>,
+    pub silver_medal_time: i32,
+    pub gold_medal_time: i32,
+    pub laps: i32,
+    pub private_level: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct LevelData {
-    id: String,
-    version: i32,
-    serialization_version: i32,
-    under_decoration_tiles: Vec<UnderDecorationTile>,
-    background_decoration_tiles: Vec<BackgroundDecorationTile>,
-    terrain_tiles: Vec<TerrainTile>,
-    floating_zone_tiles: Vec<FloatingZoneTile>,
-    object_tiles: Vec<ObjectTile>,
-    foreground_decoration_tiles: Vec<ForegroundDecorationTile>,
-    author_time: i32,
-    author_lap_times: Vec<i32>,
-    silver_medal_time: i32,
-    gold_medal_time: i32,
-    laps: i32,
-    center_camera: bool,
-    scripts: Vec<Script>,
-    theme: Theme,
-    default_music: bool,
-    music_ids: Vec<String>,
-    allow_direction_change: bool,
+pub struct LevelData {
+    pub id: String,
+    pub version: i32,
+    pub serialization_version: i32,
+    pub under_decoration_tiles: Vec<UnderDecorationTile>,
+    pub background_decoration_tiles: Vec<BackgroundDecorationTile>,
+    pub terrain_tiles: Vec<TerrainTile>,
+    pub floating_zone_tiles: Vec<FloatingZoneTile>,
+    pub object_tiles: Vec<ObjectTile>,
+    pub foreground_decoration_tiles: Vec<ForegroundDecorationTile>,
+    pub author_time: i32,
+    pub author_lap_times: Vec<i32>,
+    pub silver_medal_time: i32,
+    pub gold_medal_time: i32,
+    pub laps: i32,
+    pub center_camera: bool,
+    pub scripts: Vec<Script>,
+    pub theme: Theme,
+    pub default_music: bool,
+    pub music_ids: Vec<String>,
+    pub allow_direction_change: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct UnderDecorationTile {}
+pub struct UnderDecorationTile {}
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct BackgroundDecorationTile {
-    pos: Pos,
-    tile_id: String,
+pub struct BackgroundDecorationTile {
+    pub pos: Pos,
+    pub tile_id: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct TerrainTile {
-    pos: Pos,
-    tile_id: String,
+pub struct TerrainTile {
+    pub pos: Pos,
+    pub tile_id: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct FloatingZoneTile {}
+pub struct FloatingZoneTile {}
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct ObjectTile {
-    pos: Pos,
-    tile_id: String,
-    entity_id: i32,
-    offset: Offset,
-    properties: Vec<Property>,
+pub struct ObjectTile {
+    pub pos: Pos,
+    pub tile_id: String,
+    pub entity_id: i32,
+    pub offset: Offset,
+    pub properties: Vec<Property>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct ForegroundDecorationTile {}
+pub struct ForegroundDecorationTile {}
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct Pos {
-    x: i32,
-    y: i32,
+pub struct Pos {
+    pub x: i32,
+    pub y: i32,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct Offset {
-    x: f32,
-    y: f32,
+pub struct Offset {
+    pub x: f32,
+    pub y: f32,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct Property {
-    name: String,
-    value: String,
+pub struct Property {
+    pub name: String,
+    pub value: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct Script {}
+pub struct Script {}
 
 #[derive(Serialize, Deserialize, Debug)]
-enum Theme {
+pub enum Theme {
     #[serde(rename = "mountains")]
     Mountains,
 
