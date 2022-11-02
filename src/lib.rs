@@ -6,7 +6,7 @@ pub fn load_exolvl(data: &str) -> Result<ExoLvl, Box<dyn std::error::Error>> {
 }
 
 pub fn save_exolvl(exolvl: &ExoLvl) -> Result<String, Box<dyn std::error::Error>> {
-    Ok(serde_json::to_string_pretty(exolvl)?)
+    Ok(serde_json::to_string(exolvl)?)
 }
 
 pub fn parse_exolvl(data: &str) -> Result<ExoLvl, Box<dyn std::error::Error>> {
