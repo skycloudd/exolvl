@@ -27,16 +27,16 @@ pub struct ExoLvl {
 #[serde(rename_all = "camelCase")]
 pub struct LocalLevel {
     pub id: String,
-    pub version: i32,
+    pub version: u32,
     pub name: String,
     pub thumbnail: String,
     pub creation_date: DateTime<Utc>,
     pub update_date: DateTime<Utc>,
-    pub author_time: i32,
-    pub author_lap_times: Vec<i32>,
-    pub silver_medal_time: i32,
-    pub gold_medal_time: i32,
-    pub laps: i32,
+    pub author_time: u32,
+    pub author_lap_times: Vec<u32>,
+    pub silver_medal_time: u32,
+    pub gold_medal_time: u32,
+    pub laps: u32,
     pub private_level: bool,
 }
 
@@ -44,19 +44,19 @@ pub struct LocalLevel {
 #[serde(rename_all = "camelCase")]
 pub struct LevelData {
     pub id: String,
-    pub version: i32,
-    pub serialization_version: i32,
+    pub version: u32,
+    pub serialization_version: u32,
     pub under_decoration_tiles: Vec<UnderDecorationTile>,
     pub background_decoration_tiles: Vec<BackgroundDecorationTile>,
     pub terrain_tiles: Vec<TerrainTile>,
     pub floating_zone_tiles: Vec<FloatingZoneTile>,
     pub object_tiles: Vec<ObjectTile>,
     pub foreground_decoration_tiles: Vec<ForegroundDecorationTile>,
-    pub author_time: i32,
-    pub author_lap_times: Vec<i32>,
-    pub silver_medal_time: i32,
-    pub gold_medal_time: i32,
-    pub laps: i32,
+    pub author_time: u32,
+    pub author_lap_times: Vec<u32>,
+    pub silver_medal_time: u32,
+    pub gold_medal_time: u32,
+    pub laps: u32,
     pub center_camera: bool,
     pub scripts: Vec<Script>,
     pub theme: Theme,
@@ -92,7 +92,7 @@ pub struct FloatingZoneTile {}
 pub struct ObjectTile {
     pub pos: Pos,
     pub tile_id: String,
-    pub entity_id: i32,
+    pub entity_id: usize,
     pub offset: Offset,
     pub properties: Vec<Property>,
 }
