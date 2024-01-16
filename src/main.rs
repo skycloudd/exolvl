@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use base64::{prelude::BASE64_STANDARD, Engine};
 use binread::{BinRead, BinReaderExt as _, BinResult, ReadOptions};
 use std::io::{Read, Seek};
 
@@ -10,7 +11,7 @@ fn main() {
 
     let exolvl: Exolvl = file_reader.read_le().unwrap();
 
-    println!("{:?}\n", exolvl);
+    println!("{:#?}\n", exolvl);
 }
 
 #[derive(Debug, BinRead)]
@@ -90,6 +91,35 @@ struct LevelData {
     #[br(map = |x: MyString| x.inner)]
     theme: String,
     custom_background_colour: Colour,
+
+    #[br(pad_before = 24)]
+    _unknown1: (),
+
+    custom_terrain_colour: Colour,
+
+    #[br(pad_before = 20)]
+    _unknown_2: (),
+
+    custom_terrain_border_colour: Colour,
+    custom_terrain_border_thickness: f32,
+    custom_terrain_border_corner_radius: f32,
+
+    #[br(pad_before = 6)]
+    _unknown_3: (),
+
+    #[br(map = |x: u8| x != 0)]
+    default_music: bool,
+    #[br(map = |x: MyVec<MyString>| x.inner.into_iter().map(|x| x.inner).collect())]
+    music_ids: Vec<String>,
+    #[br(map = |x: u8| x != 0)]
+    allow_direction_change: bool,
+    #[br(map = |x: u8| x != 0)]
+    disable_replays: bool,
+    #[br(map = |x: u8| x != 0)]
+    disable_revive_pads: bool,
+    #[br(map = |x: u8| x != 0)]
+    disable_start_animation: bool,
+    gravity: Vec2,
 }
 
 #[derive(Debug, BinRead)]
@@ -129,8 +159,6 @@ impl BinRead for Action {
         let action_type = reader.read_le::<i32>()?;
         let closed = reader.read_le::<u8>()? != 0;
         let wait = reader.read_le::<u8>()? != 0;
-
-        println!("Action type: {}", action_type);
 
         Ok(Action {
             closed,
@@ -875,7 +903,6 @@ struct Parameter {
 macro_rules! define_static_type {
     ($($name:ident = $number:expr),*) => {
         #[derive(Debug)]
-        #[repr(i32)]
         enum StaticType {
             $($name = $number),*
         }
@@ -959,7 +986,6 @@ struct NovaValue {
 macro_rules! define_dynamic_type {
     ($($name:ident = $number:expr),*) => {
         #[derive(Debug)]
-        #[repr(i32)]
         enum DynamicType {
             $($name = $number),*
         }
@@ -1163,7 +1189,7 @@ define_dynamic_type!(
 #[derive(Debug, BinRead)]
 struct Pattern {
     pattern_id: i32,
-    #[br(map = |x: MyVec<MyVec<u8>>| x.inner.into_iter().map(|x| x.inner).collect())]
+    #[br(map = |x: MyVec<Image>| x.inner)]
     pattern_frames: Vec<Image>,
 }
 
@@ -1200,13 +1226,13 @@ struct BrushGrid {
 #[derive(Debug, BinRead)]
 struct Prefab {
     prefab_id: i32,
-    #[br(map = |x: MyVec<u8>| x.inner)]
     prefab_image_data: Image,
     #[br(map = |x: MyVec<Object>| x.inner)]
     items: Vec<Object>,
 }
 
-type Image = Vec<u8>;
+#[derive(Debug, BinRead)]
+struct Image(#[br(map = |x: MyVec<u8>| BASE64_STANDARD.encode(x.inner))] String);
 
 #[derive(Debug, BinRead)]
 struct Layer {
@@ -1378,7 +1404,10 @@ struct Colour {
 }
 
 #[derive(Debug, BinRead)]
-struct AuthorReplay {}
+struct AuthorReplay {
+    #[br(map = |x: MyVec<u8>| x.inner)]
+    replay_data: Vec<u8>,
+}
 
 #[derive(Debug, BinRead)]
 struct MyString {
