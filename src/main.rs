@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use base64::{prelude::BASE64_STANDARD, Engine};
-use binread::{BinRead, BinReaderExt as _, BinResult, ReadOptions};
+use binread::{BinRead, BinReaderExt, BinResult, ReadOptions};
 use std::io::{Read, Seek};
 
 const SERIALIZATION_VERSION: i32 = 16;
@@ -25,20 +25,14 @@ struct Exolvl {
 #[derive(Debug, BinRead)]
 struct LocalLevel {
     serialization_version: i32,
-    #[br(map = |x: MyString| x.inner)]
-    level_id: String,
+    level_id: MyString,
     level_version: i32,
-    #[br(map = |x: MyString| x.inner)]
-    level_name: String,
-    #[br(map = |x: MyString| x.inner)]
-    thumbnail: String,
-    #[br(map = |x: MyDateTime| x.inner)]
-    creation_date: chrono::DateTime<chrono::Utc>,
-    #[br(map = |x: MyDateTime| x.inner)]
-    update_date: chrono::DateTime<chrono::Utc>,
+    level_name: MyString,
+    thumbnail: MyString,
+    creation_date: MyDateTime,
+    update_date: MyDateTime,
     author_time: i64,
-    #[br(map = |x: MyVec<i64>| x.inner)]
-    author_lap_times: Vec<i64>,
+    author_lap_times: MyVec<i64>,
     silver_medal_time: i64,
     gold_medal_time: i64,
     laps: i32,
@@ -74,49 +68,32 @@ impl BinRead for MyDateTime {
 
 #[derive(Debug, BinRead)]
 struct LevelData {
-    #[br(map = |x: MyString| x.inner)]
-    level_id: String,
+    level_id: MyString,
     level_version: i32,
     #[br(map = |x: u8| x != 0)]
     nova_level: bool,
-    #[br(map = |x: MyVec<i32>| x.inner)]
-    under_decoration_tiles: Vec<i32>,
-    #[br(map = |x: MyVec<i32>| x.inner)]
-    background_decoration_tiles_2: Vec<i32>,
-    #[br(map = |x: MyVec<i32>| x.inner)]
-    terrain_tiles: Vec<i32>,
-    #[br(map = |x: MyVec<i32>| x.inner)]
-    floating_zone_tiles: Vec<i32>,
-    #[br(map = |x: MyVec<i32>| x.inner)]
-    object_tiles: Vec<i32>,
-    #[br(map = |x: MyVec<i32>| x.inner)]
-    foreground_decoration_tiles: Vec<i32>,
-    #[br(map = |x: MyVec<Object>| x.inner)]
-    objects: Vec<Object>,
-    #[br(map = |x: MyVec<Layer>| x.inner)]
-    layers: Vec<Layer>,
-    #[br(map = |x: MyVec<Prefab>| x.inner)]
-    prefabs: Vec<Prefab>,
-    #[br(map = |x: MyVec<Brush>| x.inner)]
-    brushes: Vec<Brush>,
-    #[br(map = |x: MyVec<Pattern>| x.inner)]
-    patterns: Vec<Pattern>,
+    under_decoration_tiles: MyVec<i32>,
+    background_decoration_tiles_2: MyVec<i32>,
+    terrain_tiles: MyVec<i32>,
+    floating_zone_tiles: MyVec<i32>,
+    object_tiles: MyVec<i32>,
+    foreground_decoration_tiles: MyVec<i32>,
+    objects: MyVec<Object>,
+    layers: MyVec<Layer>,
+    prefabs: MyVec<Prefab>,
+    brushes: MyVec<Brush>,
+    patterns: MyVec<Pattern>,
     author_time: i64,
-    #[br(map = |x: MyVec<i64>| x.inner)]
-    author_lap_times: Vec<i64>,
+    author_lap_times: MyVec<i64>,
     silver_medal_time: i64,
     gold_medal_time: i64,
     laps: i32,
     #[br(map = |x: u8| x != 0)]
     center_camera: bool,
-    #[br(map = |x: MyVec<i32>| x.inner)]
-    scripts: Vec<i32>,
-    #[br(map = |x: MyVec<NovaScript>| x.inner)]
-    nova_scripts: Vec<NovaScript>,
-    #[br(map = |x: MyVec<Variable>| x.inner)]
-    global_variables: Vec<Variable>,
-    #[br(map = |x: MyString| x.inner)]
-    theme: String,
+    scripts: MyVec<i32>,
+    nova_scripts: MyVec<NovaScript>,
+    global_variables: MyVec<Variable>,
+    theme: MyString,
     custom_background_colour: Colour,
 
     #[br(pad_before = 24)]
@@ -136,8 +113,7 @@ struct LevelData {
 
     #[br(map = |x: u8| x != 0)]
     default_music: bool,
-    #[br(map = |x: MyVec<MyString>| x.inner.into_iter().map(|x| x.inner).collect())]
-    music_ids: Vec<String>,
+    music_ids: MyVec<MyString>,
     #[br(map = |x: u8| x != 0)]
     allow_direction_change: bool,
     #[br(map = |x: u8| x != 0)]
@@ -152,20 +128,15 @@ struct LevelData {
 #[derive(Debug, BinRead)]
 struct NovaScript {
     script_id: i32,
-    #[br(map = |x: MyString| x.inner)]
-    script_name: String,
+    script_name: MyString,
     #[br(map = |x: u8| x != 0)]
     is_function: bool,
     activation_count: i32,
     condition: NovaValue,
-    #[br(map = |x: MyVec<Activator>| x.inner)]
-    activation_list: Vec<Activator>,
-    #[br(map = |x: MyVec<Parameter>| x.inner)]
-    parameters: Vec<Parameter>,
-    #[br(map = |x: MyVec<Variable>| x.inner)]
-    variables: Vec<Variable>,
-    #[br(map = |x: MyVec<Action>| x.inner)]
-    actions: Vec<Action>,
+    activation_list: MyVec<Activator>,
+    parameters: MyVec<Parameter>,
+    variables: MyVec<Variable>,
+    actions: MyVec<Action>,
 }
 
 #[derive(Debug)]
@@ -192,20 +163,20 @@ impl BinRead for Action {
             wait,
             action_type: match action_type {
                 0 => {
-                    let actions = reader.read_le::<MyVec<Action>>()?.inner;
+                    let actions = reader.read_le::<MyVec<Action>>()?;
                     let count = reader.read_le::<NovaValue>()?;
 
                     ActionType::Repeat { actions, count }
                 }
                 1 => {
-                    let actions = reader.read_le::<MyVec<Action>>()?.inner;
+                    let actions = reader.read_le::<MyVec<Action>>()?;
                     let condition = reader.read_le::<NovaValue>()?;
 
                     ActionType::RepeatWhile { actions, condition }
                 }
                 2 => {
-                    let if_actions = reader.read_le::<MyVec<Action>>()?.inner;
-                    let else_actions = reader.read_le::<MyVec<Action>>()?.inner;
+                    let if_actions = reader.read_le::<MyVec<Action>>()?;
+                    let else_actions = reader.read_le::<MyVec<Action>>()?;
                     let condition = reader.read_le::<NovaValue>()?;
 
                     ActionType::ConditionBlock {
@@ -651,7 +622,7 @@ impl BinRead for Action {
                 }
                 49 => {
                     let target_objects = reader.read_le::<NovaValue>()?;
-                    let actions = reader.read_le::<MyVec<Action>>()?.inner;
+                    let actions = reader.read_le::<MyVec<Action>>()?;
 
                     ActionType::RepeatForEachObject {
                         target_objects,
@@ -667,16 +638,16 @@ impl BinRead for Action {
 #[derive(Debug)]
 enum ActionType {
     Repeat {
-        actions: Vec<Action>,
+        actions: MyVec<Action>,
         count: NovaValue,
     },
     RepeatWhile {
-        actions: Vec<Action>,
+        actions: MyVec<Action>,
         condition: NovaValue,
     },
     ConditionBlock {
-        if_actions: Vec<Action>,
-        else_actions: Vec<Action>,
+        if_actions: MyVec<Action>,
+        else_actions: MyVec<Action>,
         condition: NovaValue,
     },
     Wait {
@@ -890,15 +861,14 @@ enum ActionType {
     },
     RepeatForEachObject {
         target_objects: NovaValue,
-        actions: Vec<Action>,
+        actions: MyVec<Action>,
     },
 }
 
 #[derive(Debug, BinRead)]
 struct FunctionCall {
     id: i32,
-    #[br(map = |x: MyVec<CallParameter>| x.inner)]
-    parameters: Vec<CallParameter>,
+    parameters: MyVec<CallParameter>,
 }
 
 #[derive(Debug, BinRead)]
@@ -910,8 +880,7 @@ struct CallParameter {
 #[derive(Debug, BinRead)]
 struct Variable {
     variable_id: i32,
-    #[br(map = |x: MyString| x.inner)]
-    name: String,
+    name: MyString,
     #[br(map = |x: i32| x.try_into().unwrap())]
     static_type: StaticType,
     dynamic_type: NovaValue,
@@ -920,8 +889,7 @@ struct Variable {
 #[derive(Debug, BinRead)]
 struct Parameter {
     parameter_id: i32,
-    #[br(map = |x: MyString| x.inner)]
-    name: String,
+    name: MyString,
     #[br(map = |x: i32| x.try_into().unwrap())]
     static_type: StaticType,
     dynamic_type: NovaValue,
@@ -968,8 +936,7 @@ define_static_type!(
 #[derive(Debug, BinRead)]
 struct Activator {
     activator_type: i32,
-    #[br(map = |x: MyVec<NovaValue>| x.inner)]
-    parameters: Vec<NovaValue>,
+    parameters: MyVec<NovaValue>,
 }
 
 #[binread::derive_binread]
@@ -987,8 +954,7 @@ struct NovaValue {
     has_string_value: bool,
 
     #[br(if(has_string_value))]
-    #[br(map = |x: MyString| Some(x.inner))]
-    string_value: Option<String>,
+    string_value: Option<MyString>,
 
     color_value: Colour,
     vector_value: Vec2,
@@ -998,15 +964,14 @@ struct NovaValue {
     has_int_list: bool,
 
     #[br(if(has_int_list))]
-    #[br(map = |x: MyVec<i32>| Some(x.inner))]
-    int_list_value: Option<Vec<i32>>,
+    int_list_value: Option<MyVec<i32>>,
 
     #[br(temp)]
     #[br(map = |x: u8| x != 0)]
     has_sub_values: bool,
 
     #[br(if(has_sub_values))]
-    #[br(map = |x: MyVec<NovaValue>| Some(x.inner))]
+    #[br(map = |x: MyVec<NovaValue>| Some(x.0))]
     sub_values: Option<Vec<NovaValue>>,
 }
 
@@ -1216,8 +1181,7 @@ define_dynamic_type!(
 #[derive(Debug, BinRead)]
 struct Pattern {
     pattern_id: i32,
-    #[br(map = |x: MyVec<Image>| x.inner)]
-    pattern_frames: Vec<Image>,
+    pattern_frames: MyVec<Image>,
 }
 
 #[derive(Debug, BinRead)]
@@ -1226,15 +1190,13 @@ struct Brush {
     spread: Vec2,
     frequency: f32,
     grid: BrushGrid,
-    #[br(map = |x: MyVec<BrushObject>| x.inner)]
-    objects: Vec<BrushObject>,
+    objects: MyVec<BrushObject>,
 }
 
 #[derive(Debug, BinRead)]
 struct BrushObject {
     entity_id: i32,
-    #[br(map = |x: MyVec<ObjectProperty>| x.inner)]
-    properties: Vec<ObjectProperty>,
+    properties: MyVec<ObjectProperty>,
     weight: f32,
     scale: f32,
     rotation: f32,
@@ -1254,18 +1216,16 @@ struct BrushGrid {
 struct Prefab {
     prefab_id: i32,
     prefab_image_data: Image,
-    #[br(map = |x: MyVec<Object>| x.inner)]
-    items: Vec<Object>,
+    items: MyVec<Object>,
 }
 
 #[derive(Debug, BinRead)]
-struct Image(#[br(map = |x: MyVec<u8>| BASE64_STANDARD.encode(x.inner))] String);
+struct Image(#[br(map = |x: MyVec<u8>| BASE64_STANDARD.encode(x.0))] String);
 
 #[derive(Debug, BinRead)]
 struct Layer {
     layer_id: i32,
-    #[br(map = |x: MyString| x.inner)]
-    layer_name: String,
+    layer_name: MyString,
     #[br(map = |x: u8| x != 0)]
     selected: bool,
     #[br(map = |x: u8| x != 0)]
@@ -1276,8 +1236,7 @@ struct Layer {
     parallax: Vec2,
     #[br(map = |x: u8| x != 0)]
     fixed_size: bool,
-    #[br(map = |x: MyVec<i32>| x.inner)]
-    children: Vec<i32>,
+    children: MyVec<i32>,
 }
 
 #[derive(Debug, BinRead)]
@@ -1291,14 +1250,11 @@ struct Object {
     position: Vec2,
     scale: Vec2,
     rotation: f32,
-    #[br(map = |x: MyString| x.inner)]
-    tag: String,
-    #[br(map = |x: MyVec<ObjectProperty>| x.inner)]
-    properties: Vec<ObjectProperty>,
+    tag: MyString,
+    properties: MyVec<ObjectProperty>,
     in_layer: i32,
     in_group: i32,
-    #[br(map = |x: MyVec<i32>| x.inner)]
-    group_members: Vec<i32>,
+    group_members: MyVec<i32>,
 }
 
 #[derive(Debug)]
@@ -1319,7 +1275,7 @@ enum ObjectProperty {
     BorderThickness(f32),
     PhysicsType(i32),
     Friction(f32),
-    TerrainCorners(Vec<Vec<Vec2>>),
+    TerrainCorners(MyVec<MyVec<Vec2>>),
     Direction(i32),
     Impulse(i32),
     Killer(bool),
@@ -1372,12 +1328,7 @@ impl BinRead for ObjectProperty {
             14 => Ok(ObjectProperty::PhysicsType(reader.read_le()?)),
             15 => Ok(ObjectProperty::Friction(reader.read_le()?)),
             16 => Ok(ObjectProperty::TerrainCorners(
-                reader
-                    .read_le::<MyVec<MyVec<_>>>()?
-                    .inner
-                    .into_iter()
-                    .map(|x| x.inner)
-                    .collect(),
+                reader.read_le::<MyVec<MyVec<Vec2>>>()?,
             )),
             17 => Ok(ObjectProperty::Direction(reader.read_le()?)),
             18 => Ok(ObjectProperty::Impulse(reader.read_le()?)),
@@ -1397,7 +1348,7 @@ impl BinRead for ObjectProperty {
             26 => Ok(ObjectProperty::Pattern(reader.read_le()?)),
             27 => Ok(ObjectProperty::PatternTiling(reader.read_le()?)),
             28 => Ok(ObjectProperty::PatternOffset(reader.read_le()?)),
-            35 => Ok(ObjectProperty::Sprite(reader.read_le::<MyString>()?.inner)),
+            35 => Ok(ObjectProperty::Sprite(reader.read_le::<MyString>()?.0)),
             36 => Ok(ObjectProperty::Trigger(reader.read_le::<u8>()? != 0)),
             37 => Ok(ObjectProperty::Health(reader.read_le()?)),
             38 => Ok(ObjectProperty::DamageFromJump(reader.read_le::<u8>()? != 0)),
@@ -1408,7 +1359,7 @@ impl BinRead for ObjectProperty {
             41 => Ok(ObjectProperty::Floating(reader.read_le::<u8>()? != 0)),
             43 => Ok(ObjectProperty::FlipX(reader.read_le::<u8>()? != 0)),
             44 => Ok(ObjectProperty::FlipY(reader.read_le::<u8>()? != 0)),
-            45 => Ok(ObjectProperty::Text(reader.read_le::<MyString>()?.inner)),
+            45 => Ok(ObjectProperty::Text(reader.read_le::<MyString>()?.0)),
             46 => Ok(ObjectProperty::FontSize(reader.read_le()?)),
             47 => Ok(ObjectProperty::EditorColour(reader.read_le()?)),
             other => unreachable!("Unknown property id: {}", other),
@@ -1432,24 +1383,62 @@ struct Colour {
 
 #[derive(Debug, BinRead)]
 struct AuthorReplay {
-    #[br(map = |x: MyVec<u8>| BASE64_STANDARD.encode(x.inner))]
+    #[br(map = |x: MyVec<u8>| BASE64_STANDARD.encode(x.0))]
     replay_data: String,
 }
 
-#[derive(Debug, BinRead)]
-struct MyString {
-    #[br(map = |x: VarInt| x.inner as u32)]
-    len: u32,
-    #[br(count = len)]
-    #[br(map = |x: Vec<char>| x.into_iter().collect())]
-    inner: String,
+#[derive(Debug)]
+struct MyString(String);
+
+impl BinRead for MyString {
+    type Args = ();
+
+    fn read_options<R: Read + Seek>(
+        reader: &mut R,
+        options: &ReadOptions,
+        args: Self::Args,
+    ) -> BinResult<Self> {
+        let len = reader.read_le::<VarInt>()?;
+
+        let mut options = options.clone();
+        options.count = Some(len.inner as usize);
+
+        let buf = <Vec<char>>::read_options(reader, &options, args)?;
+
+        let string = buf.into_iter().collect::<String>();
+
+        Ok(MyString(string))
+    }
 }
 
-#[derive(Debug, BinRead)]
-struct MyVec<T: BinRead<Args = ()>> {
-    len: u32,
-    #[br(count = len)]
-    inner: Vec<T>,
+// #[derive(Debug, BinRead)]
+// struct MyVec<T: BinRead<Args = ()>> {
+//     #[br(map = |x: i32| x as u32)]
+//     len: u32,
+//     #[br(count = len)]
+//     inner: Vec<T>,
+// }
+
+#[derive(Debug)]
+struct MyVec<T>(Vec<T>);
+
+impl<T: BinRead<Args = ()>> BinRead for MyVec<T> {
+    type Args = ();
+
+    fn read_options<R: Read + Seek>(
+        reader: &mut R,
+        options: &ReadOptions,
+        args: Self::Args,
+    ) -> BinResult<Self> {
+        let len = reader.read_le::<i32>()?;
+
+        let mut options = options.clone();
+        options.count = Some(len as usize);
+
+        let buf = <Vec<T>>::read_options(reader, &options, args)?;
+
+        Ok(MyVec(buf))
+    }
 }
 
 #[derive(Debug, BinRead)]
