@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
-use base64::{prelude::BASE64_STANDARD, Engine};
 use binread::{BinRead, BinReaderExt, BinResult, ReadOptions};
+use binwrite::BinWrite;
 use std::io::{Read, Seek};
 
 const SERIALIZATION_VERSION: i32 = 16;
@@ -12,6 +12,16 @@ fn main() {
     let exolvl: Exolvl = file_reader.read_le().unwrap();
 
     println!("{:#?}", exolvl);
+
+    write(exolvl);
+}
+
+fn write(exolvl: Exolvl) {
+    let mut buf = vec![];
+
+    exolvl.write(&mut buf).unwrap();
+
+    std::fs::write("testlvl.exolvl.bin.out", buf).unwrap();
 }
 
 #[derive(Debug, BinRead)]
@@ -22,7 +32,25 @@ struct Exolvl {
     author_replay: AuthorReplay,
 }
 
-#[derive(Debug, BinRead)]
+impl BinWrite for Exolvl {
+    fn write_options<W: std::io::prelude::Write>(
+        &self,
+        writer: &mut W,
+        options: &binwrite::WriterOption,
+    ) -> std::io::Result<()> {
+        writer.write_all(b"NYA^")?;
+
+        self.local_level.write_options(writer, options)?;
+
+        self.level_data.write_options(writer, options)?;
+
+        self.author_replay.write_options(writer, options)?;
+
+        Ok(())
+    }
+}
+
+#[derive(Debug, BinRead, BinWrite)]
 #[br(assert(serialization_version == SERIALIZATION_VERSION, "incorrect serialization version, must be 16"))]
 struct LocalLevel {
     serialization_version: i32,
@@ -38,13 +66,16 @@ struct LocalLevel {
     gold_medal_time: i64,
     laps: i32,
     #[br(map = |x: u8| x != 0)]
-    #[br(pad_after = 1)]
+    #[binwrite(preprocessor(bool_to_u8))]
     private: bool,
+
+    unknown_1: u8,
 }
 
 #[derive(Debug)]
 struct MyDateTime {
     inner: chrono::DateTime<chrono::Utc>,
+    ticks: i64,
 }
 
 impl BinRead for MyDateTime {
@@ -58,20 +89,36 @@ impl BinRead for MyDateTime {
         const TICKS_TO_SECONDS: i64 = 10_000_000;
         const EPOCH_DIFFERENCE: i64 = 62_135_596_800;
 
-        let ticks = reader.read_le::<i64>()? & 0x3FFFFFFFFFFFFFFF;
-        let seconds = ticks / TICKS_TO_SECONDS - EPOCH_DIFFERENCE;
+        let ticks = reader.read_le::<i64>()?;
+
+        let masked_ticks = ticks & 0x3FFFFFFFFFFFFFFF;
+        let seconds = masked_ticks / TICKS_TO_SECONDS - EPOCH_DIFFERENCE;
 
         Ok(MyDateTime {
             inner: chrono::DateTime::<chrono::Utc>::from_timestamp(seconds, 0).unwrap(),
+            ticks,
         })
     }
 }
 
-#[derive(Debug, BinRead)]
+impl BinWrite for MyDateTime {
+    fn write_options<W: std::io::prelude::Write>(
+        &self,
+        writer: &mut W,
+        _options: &binwrite::WriterOption,
+    ) -> std::io::Result<()> {
+        writer.write_all(&self.ticks.to_le_bytes())?;
+
+        Ok(())
+    }
+}
+
+#[derive(Debug, BinRead, BinWrite)]
 struct LevelData {
     level_id: MyString,
     level_version: i32,
     #[br(map = |x: u8| x != 0)]
+    #[binwrite(preprocessor(bool_to_u8))]
     nova_level: bool,
     under_decoration_tiles: MyVec<i32>,
     background_decoration_tiles_2: MyVec<i32>,
@@ -90,6 +137,7 @@ struct LevelData {
     gold_medal_time: i64,
     laps: i32,
     #[br(map = |x: u8| x != 0)]
+    #[binwrite(preprocessor(bool_to_u8))]
     center_camera: bool,
     scripts: MyVec<i32>,
     nova_scripts: MyVec<NovaScript>,
@@ -97,40 +145,46 @@ struct LevelData {
     theme: MyString,
     custom_background_colour: Colour,
 
-    #[br(pad_before = 24)]
-    _unknown1: (),
+    #[br(count = 24)]
+    _unknown1: Vec<u8>,
 
     custom_terrain_colour: Colour,
 
-    #[br(pad_before = 20)]
-    _unknown_2: (),
+    #[br(count = 20)]
+    _unknown_2: Vec<u8>,
 
     custom_terrain_border_colour: Colour,
     custom_terrain_border_thickness: f32,
     custom_terrain_border_corner_radius: f32,
 
-    #[br(pad_before = 6)]
-    _unknown_3: (),
+    #[br(count = 6)]
+    _unknown_3: Vec<u8>,
 
     #[br(map = |x: u8| x != 0)]
+    #[binwrite(preprocessor(bool_to_u8))]
     default_music: bool,
     music_ids: MyVec<MyString>,
     #[br(map = |x: u8| x != 0)]
+    #[binwrite(preprocessor(bool_to_u8))]
     allow_direction_change: bool,
     #[br(map = |x: u8| x != 0)]
+    #[binwrite(preprocessor(bool_to_u8))]
     disable_replays: bool,
     #[br(map = |x: u8| x != 0)]
+    #[binwrite(preprocessor(bool_to_u8))]
     disable_revive_pads: bool,
     #[br(map = |x: u8| x != 0)]
+    #[binwrite(preprocessor(bool_to_u8))]
     disable_start_animation: bool,
     gravity: Vec2,
 }
 
-#[derive(Debug, BinRead)]
+#[derive(Debug, BinRead, BinWrite)]
 struct NovaScript {
     script_id: i32,
     script_name: MyString,
     #[br(map = |x: u8| x != 0)]
+    #[binwrite(preprocessor(bool_to_u8))]
     is_function: bool,
     activation_count: i32,
     condition: NovaValue,
@@ -636,6 +690,450 @@ impl BinRead for Action {
     }
 }
 
+impl BinWrite for Action {
+    fn write_options<W: std::io::prelude::Write>(
+        &self,
+        writer: &mut W,
+        options: &binwrite::WriterOption,
+    ) -> std::io::Result<()> {
+        let type_: i32 = match &self.action_type {
+            ActionType::Repeat { .. } => 0,
+            ActionType::RepeatWhile { .. } => 1,
+            ActionType::ConditionBlock { .. } => 2,
+            ActionType::Wait { .. } => 3,
+            ActionType::WaitFrames { .. } => 4,
+            ActionType::Move { .. } => 5,
+            ActionType::Scale { .. } => 6,
+            ActionType::Rotate { .. } => 7,
+            ActionType::RotateAround { .. } => 8,
+            ActionType::SetVariable { .. } => 9,
+            ActionType::ResetVariable { .. } => 10,
+            ActionType::ResetObject { .. } => 11,
+            ActionType::SetColor { .. } => 12,
+            ActionType::SetTransparency { .. } => 13,
+            ActionType::SetSecondaryColor { .. } => 14,
+            ActionType::SetSecondaryTransparency { .. } => 15,
+            ActionType::SetBorderColor { .. } => 16,
+            ActionType::SetBorderTransparency { .. } => 17,
+            ActionType::SetSprite { .. } => 18,
+            ActionType::SetText { .. } => 19,
+            ActionType::SetEnabled { .. } => 20,
+            ActionType::Activate { .. } => 21,
+            ActionType::Deactivate { .. } => 22,
+            ActionType::Damage { .. } => 23,
+            ActionType::Kill { .. } => 24,
+            ActionType::GameFinish {} => 25,
+            ActionType::CameraPan { .. } => 26,
+            ActionType::CameraFollowPlayer {} => 27,
+            ActionType::CameraZoom { .. } => 28,
+            ActionType::CameraZoomReset { .. } => 29,
+            ActionType::CameraOffset { .. } => 30,
+            ActionType::CameraOffsetReset { .. } => 31,
+            ActionType::CameraShake { .. } => 32,
+            ActionType::PlaySound { .. } => 33,
+            ActionType::PlayMusic { .. } => 34,
+            ActionType::SetDirection { .. } => 35,
+            ActionType::SetGravity { .. } => 36,
+            ActionType::SetVelocity { .. } => 37,
+            ActionType::SetCinematic { .. } => 38,
+            ActionType::SetInputEnabled { .. } => 39,
+            ActionType::SetTimerEnabled { .. } => 40,
+            ActionType::GameTextShow { .. } => 41,
+            ActionType::DialogueShow { .. } => 42,
+            ActionType::StopScript { .. } => 43,
+            ActionType::TransitionIn { .. } => 44,
+            ActionType::TransitionOut { .. } => 45,
+            ActionType::TimeScale { .. } => 46,
+            ActionType::RunFunction { .. } => 47,
+            ActionType::SetVariableOverTime { .. } => 48,
+            ActionType::RepeatForEachObject { .. } => 49,
+        };
+
+        writer.write_all(&type_.to_le_bytes())?;
+
+        writer.write_all(&bool_to_u8(&self.closed).to_le_bytes())?;
+        writer.write_all(&bool_to_u8(&self.wait).to_le_bytes())?;
+
+        match &self.action_type {
+            ActionType::Repeat { actions, count } => {
+                actions.write_options(writer, options)?;
+                count.write_options(writer, options)?;
+            }
+            ActionType::RepeatWhile { actions, condition } => {
+                actions.write_options(writer, options)?;
+                condition.write_options(writer, options)?;
+            }
+            ActionType::ConditionBlock {
+                if_actions,
+                else_actions,
+                condition,
+            } => {
+                if_actions.write_options(writer, options)?;
+                else_actions.write_options(writer, options)?;
+                condition.write_options(writer, options)?;
+            }
+            ActionType::Wait { duration } => {
+                duration.write_options(writer, options)?;
+            }
+            ActionType::WaitFrames { frames } => {
+                frames.write_options(writer, options)?;
+            }
+            ActionType::Move {
+                target_objects,
+                position,
+                global,
+                duration,
+                easing,
+            } => {
+                target_objects.write_options(writer, options)?;
+                position.write_options(writer, options)?;
+                global.write_options(writer, options)?;
+                duration.write_options(writer, options)?;
+                easing.write_options(writer, options)?;
+            }
+            ActionType::Scale {
+                target_objects,
+                scale,
+                duration,
+                easing,
+            } => {
+                target_objects.write_options(writer, options)?;
+                scale.write_options(writer, options)?;
+                duration.write_options(writer, options)?;
+                easing.write_options(writer, options)?;
+            }
+            ActionType::Rotate {
+                target_objects,
+                rotation,
+                shortest_path,
+                global,
+                duration,
+                easing,
+            } => {
+                target_objects.write_options(writer, options)?;
+                rotation.write_options(writer, options)?;
+                shortest_path.write_options(writer, options)?;
+                global.write_options(writer, options)?;
+                duration.write_options(writer, options)?;
+                easing.write_options(writer, options)?;
+            }
+            ActionType::RotateAround {
+                target_objects,
+                pivot,
+                rotation,
+                rotate_target,
+                duration,
+                easing,
+            } => {
+                target_objects.write_options(writer, options)?;
+                pivot.write_options(writer, options)?;
+                rotation.write_options(writer, options)?;
+                rotate_target.write_options(writer, options)?;
+                duration.write_options(writer, options)?;
+                easing.write_options(writer, options)?;
+            }
+            ActionType::SetVariable { variable, value } => {
+                variable.write_options(writer, options)?;
+
+                if let Some(value) = value {
+                    writer.write_all(&[1])?;
+                    value.write_options(writer, options)?;
+                } else {
+                    writer.write_all(&[0])?;
+                }
+            }
+            ActionType::ResetVariable { variable } => {
+                variable.write_options(writer, options)?;
+            }
+            ActionType::ResetObject { target_objects } => {
+                target_objects.write_options(writer, options)?;
+            }
+            ActionType::SetColor {
+                target_objects,
+                color,
+                channel,
+                duration,
+                easing,
+            } => {
+                target_objects.write_options(writer, options)?;
+                color.write_options(writer, options)?;
+                channel.write_options(writer, options)?;
+                duration.write_options(writer, options)?;
+                easing.write_options(writer, options)?;
+            }
+            ActionType::SetTransparency {
+                target_objects,
+                transparency,
+                channel,
+                duration,
+                easing,
+            } => {
+                target_objects.write_options(writer, options)?;
+                transparency.write_options(writer, options)?;
+                channel.write_options(writer, options)?;
+                duration.write_options(writer, options)?;
+                easing.write_options(writer, options)?;
+            }
+            ActionType::SetSecondaryColor {
+                target_objects,
+                color,
+                duration,
+                easing,
+            } => {
+                target_objects.write_options(writer, options)?;
+                color.write_options(writer, options)?;
+                duration.write_options(writer, options)?;
+                easing.write_options(writer, options)?;
+            }
+            ActionType::SetSecondaryTransparency {
+                target_objects,
+                transparency,
+                duration,
+                easing,
+            } => {
+                target_objects.write_options(writer, options)?;
+                transparency.write_options(writer, options)?;
+                duration.write_options(writer, options)?;
+                easing.write_options(writer, options)?;
+            }
+            ActionType::SetBorderColor {
+                target_objects,
+                color,
+                duration,
+                easing,
+            } => {
+                target_objects.write_options(writer, options)?;
+                color.write_options(writer, options)?;
+                duration.write_options(writer, options)?;
+                easing.write_options(writer, options)?;
+            }
+            ActionType::SetBorderTransparency {
+                target_objects,
+                transparency,
+                duration,
+                easing,
+            } => {
+                target_objects.write_options(writer, options)?;
+                transparency.write_options(writer, options)?;
+                duration.write_options(writer, options)?;
+                easing.write_options(writer, options)?;
+            }
+            ActionType::SetSprite {
+                target_objects,
+                sprite,
+            } => {
+                target_objects.write_options(writer, options)?;
+                sprite.write_options(writer, options)?;
+            }
+            ActionType::SetText {
+                target_objects,
+                text,
+            } => {
+                target_objects.write_options(writer, options)?;
+                text.write_options(writer, options)?;
+            }
+            ActionType::SetEnabled {
+                target_objects,
+                enabled,
+            } => {
+                target_objects.write_options(writer, options)?;
+                enabled.write_options(writer, options)?;
+            }
+            ActionType::Activate { target_objects } => {
+                target_objects.write_options(writer, options)?;
+            }
+            ActionType::Deactivate { target_objects } => {
+                target_objects.write_options(writer, options)?;
+            }
+            ActionType::Damage {
+                target_objects,
+                damage,
+            } => {
+                target_objects.write_options(writer, options)?;
+                damage.write_options(writer, options)?;
+            }
+            ActionType::Kill { target_objects } => {
+                target_objects.write_options(writer, options)?;
+            }
+            ActionType::GameFinish {} => {}
+            ActionType::CameraPan {
+                position,
+                duration,
+                easing,
+            } => {
+                position.write_options(writer, options)?;
+                duration.write_options(writer, options)?;
+                easing.write_options(writer, options)?;
+            }
+            ActionType::CameraFollowPlayer {} => {}
+            ActionType::CameraZoom {
+                viewport_size,
+                duration,
+                easing,
+            } => {
+                viewport_size.write_options(writer, options)?;
+                duration.write_options(writer, options)?;
+                easing.write_options(writer, options)?;
+            }
+            ActionType::CameraZoomReset { duration, easing } => {
+                duration.write_options(writer, options)?;
+                easing.write_options(writer, options)?;
+            }
+            ActionType::CameraOffset {
+                offset,
+                duration,
+                easing,
+            } => {
+                offset.write_options(writer, options)?;
+                duration.write_options(writer, options)?;
+                easing.write_options(writer, options)?;
+            }
+            ActionType::CameraOffsetReset { duration, easing } => {
+                duration.write_options(writer, options)?;
+                easing.write_options(writer, options)?;
+            }
+            ActionType::CameraShake {
+                strength,
+                roughness,
+                fade_in,
+                fade_out,
+                duration,
+            } => {
+                strength.write_options(writer, options)?;
+                roughness.write_options(writer, options)?;
+                fade_in.write_options(writer, options)?;
+                fade_out.write_options(writer, options)?;
+                duration.write_options(writer, options)?;
+            }
+            ActionType::PlaySound {
+                sound,
+                volume,
+                pitch,
+            } => {
+                sound.write_options(writer, options)?;
+                volume.write_options(writer, options)?;
+                pitch.write_options(writer, options)?;
+            }
+            ActionType::PlayMusic {
+                music,
+                volume,
+                pitch,
+            } => {
+                music.write_options(writer, options)?;
+                volume.write_options(writer, options)?;
+                pitch.write_options(writer, options)?;
+            }
+            ActionType::SetDirection {
+                target_objects,
+                direction,
+            } => {
+                target_objects.write_options(writer, options)?;
+                direction.write_options(writer, options)?;
+            }
+            ActionType::SetGravity {
+                target_objects,
+                gravity,
+            } => {
+                target_objects.write_options(writer, options)?;
+                gravity.write_options(writer, options)?;
+            }
+            ActionType::SetVelocity {
+                target_objects,
+                velocity,
+            } => {
+                target_objects.write_options(writer, options)?;
+                velocity.write_options(writer, options)?;
+            }
+            ActionType::SetCinematic { enabled } => {
+                enabled.write_options(writer, options)?;
+            }
+            ActionType::SetInputEnabled { enabled } => {
+                enabled.write_options(writer, options)?;
+            }
+            ActionType::SetTimerEnabled { enabled } => {
+                enabled.write_options(writer, options)?;
+            }
+            ActionType::GameTextShow { text, duration } => {
+                text.write_options(writer, options)?;
+                duration.write_options(writer, options)?;
+            }
+            ActionType::DialogueShow {
+                text,
+                position,
+                reverse_direction,
+            } => {
+                text.write_options(writer, options)?;
+                position.write_options(writer, options)?;
+                reverse_direction.write_options(writer, options)?;
+            }
+            ActionType::StopScript { script } => {
+                script.write_options(writer, options)?;
+            }
+            ActionType::TransitionIn {
+                type_,
+                color,
+                duration,
+                easing,
+            } => {
+                type_.write_options(writer, options)?;
+                color.write_options(writer, options)?;
+                duration.write_options(writer, options)?;
+                easing.write_options(writer, options)?;
+            }
+            ActionType::TransitionOut {
+                type_,
+                color,
+                duration,
+                easing,
+            } => {
+                type_.write_options(writer, options)?;
+                color.write_options(writer, options)?;
+                duration.write_options(writer, options)?;
+                easing.write_options(writer, options)?;
+            }
+            ActionType::TimeScale {
+                time_scale,
+                duration,
+                easing,
+            } => {
+                time_scale.write_options(writer, options)?;
+                duration.write_options(writer, options)?;
+                easing.write_options(writer, options)?;
+            }
+            ActionType::RunFunction { function } => {
+                function.write_options(writer, options)?;
+            }
+            ActionType::SetVariableOverTime {
+                variable,
+                value,
+                duration,
+                easing,
+            } => {
+                variable.write_options(writer, options)?;
+
+                if let Some(value) = value {
+                    writer.write_all(&[1])?;
+                    value.write_options(writer, options)?;
+                } else {
+                    writer.write_all(&[0])?;
+                }
+
+                duration.write_options(writer, options)?;
+                easing.write_options(writer, options)?;
+            }
+            ActionType::RepeatForEachObject {
+                target_objects,
+                actions,
+            } => {
+                target_objects.write_options(writer, options)?;
+                actions.write_options(writer, options)?;
+            }
+        };
+
+        Ok(())
+    }
+}
+
 #[derive(Debug)]
 enum ActionType {
     Repeat {
@@ -866,19 +1364,19 @@ enum ActionType {
     },
 }
 
-#[derive(Debug, BinRead)]
+#[derive(Debug, BinRead, BinWrite)]
 struct FunctionCall {
     id: i32,
     parameters: MyVec<CallParameter>,
 }
 
-#[derive(Debug, BinRead)]
+#[derive(Debug, BinRead, BinWrite)]
 struct CallParameter {
     parameter_id: i32,
     value: NovaValue,
 }
 
-#[derive(Debug, BinRead)]
+#[derive(Debug, BinRead, BinWrite)]
 struct Variable {
     variable_id: i32,
     name: MyString,
@@ -887,7 +1385,7 @@ struct Variable {
     dynamic_type: NovaValue,
 }
 
-#[derive(Debug, BinRead)]
+#[derive(Debug, BinRead, BinWrite)]
 struct Parameter {
     parameter_id: i32,
     name: MyString,
@@ -913,6 +1411,14 @@ macro_rules! define_static_type {
                 }
             }
         }
+
+        impl From<&StaticType> for i32 {
+            fn from(value: &StaticType) -> Self {
+                match value {
+                    $(StaticType::$name => $number,)*
+                }
+            }
+        }
     };
 }
 
@@ -934,7 +1440,17 @@ define_static_type!(
     Layer = 14
 );
 
-#[derive(Debug, BinRead)]
+impl BinWrite for StaticType {
+    fn write_options<W: std::io::prelude::Write>(
+        &self,
+        writer: &mut W,
+        _options: &binwrite::WriterOption,
+    ) -> std::io::Result<()> {
+        writer.write_all(&Into::<i32>::into(self).to_le_bytes())
+    }
+}
+
+#[derive(Debug, BinRead, BinWrite)]
 struct Activator {
     activator_type: i32,
     parameters: MyVec<NovaValue>,
@@ -975,6 +1491,49 @@ struct NovaValue {
     sub_values: Option<MyVec<NovaValue>>,
 }
 
+impl BinWrite for NovaValue {
+    fn write_options<W: std::io::prelude::Write>(
+        &self,
+        writer: &mut W,
+        options: &binwrite::WriterOption,
+    ) -> std::io::Result<()> {
+        writer.write_all(&Into::<i32>::into(&self.dynamic_type).to_le_bytes())?;
+
+        writer.write_all(&[bool_to_u8(&self.bool_value)])?;
+
+        writer.write_all(&self.int_value.to_le_bytes())?;
+
+        writer.write_all(&self.float_value.to_le_bytes())?;
+
+        if let Some(string_value) = &self.string_value {
+            writer.write_all(&[1])?;
+            string_value.write_options(writer, options)?;
+        } else {
+            writer.write_all(&[0])?;
+        }
+
+        self.color_value.write_options(writer, options)?;
+
+        self.vector_value.write_options(writer, options)?;
+
+        if let Some(int_list_value) = &self.int_list_value {
+            writer.write_all(&[1])?;
+            int_list_value.write_options(writer, options)?;
+        } else {
+            writer.write_all(&[0])?;
+        }
+
+        if let Some(sub_values) = &self.sub_values {
+            writer.write_all(&[1])?;
+            sub_values.write_options(writer, options)?;
+        } else {
+            writer.write_all(&[0])?;
+        }
+
+        Ok(())
+    }
+}
+
 macro_rules! define_dynamic_type {
     ($($name:ident = $number:expr),*) => {
         #[derive(Debug)]
@@ -989,6 +1548,14 @@ macro_rules! define_dynamic_type {
                 match value {
                     $($number => Ok(DynamicType::$name),)*
                     _ => Err(())
+                }
+            }
+        }
+
+        impl From<&DynamicType> for i32 {
+            fn from(value: &DynamicType) -> Self {
+                match value {
+                    $(DynamicType::$name => $number,)*
                 }
             }
         }
@@ -1178,13 +1745,13 @@ define_dynamic_type!(
     LayerParameter = 179
 );
 
-#[derive(Debug, BinRead)]
+#[derive(Debug, BinRead, BinWrite)]
 struct Pattern {
     pattern_id: i32,
     pattern_frames: MyVec<Image>,
 }
 
-#[derive(Debug, BinRead)]
+#[derive(Debug, BinRead, BinWrite)]
 struct Brush {
     brush_id: i32,
     spread: Vec2,
@@ -1193,7 +1760,7 @@ struct Brush {
     objects: MyVec<BrushObject>,
 }
 
-#[derive(Debug, BinRead)]
+#[derive(Debug, BinRead, BinWrite)]
 struct BrushObject {
     entity_id: i32,
     properties: MyVec<ObjectProperty>,
@@ -1201,18 +1768,20 @@ struct BrushObject {
     scale: f32,
     rotation: f32,
     #[br(map = |x: u8| x != 0)]
+    #[binwrite(preprocessor(bool_to_u8))]
     flip_x: bool,
     #[br(map = |x: u8| x != 0)]
+    #[binwrite(preprocessor(bool_to_u8))]
     flip_y: bool,
 }
 
-#[derive(Debug, BinRead)]
+#[derive(Debug, BinRead, BinWrite)]
 struct BrushGrid {
     x: i32,
     y: i32,
 }
 
-#[derive(Debug, BinRead)]
+#[derive(Debug, BinRead, BinWrite)]
 struct Prefab {
     prefab_id: i32,
     prefab_image_data: Image,
@@ -1220,33 +1789,45 @@ struct Prefab {
 }
 
 #[derive(Debug, BinRead)]
-struct Image(#[br(map = |x: MyVec<u8>| BASE64_STANDARD.encode(x.0))] String);
+struct Image(MyVec<u8>);
 
-#[derive(Debug, BinRead)]
+impl BinWrite for Image {
+    fn write_options<W: std::io::prelude::Write>(
+        &self,
+        writer: &mut W,
+        options: &binwrite::WriterOption,
+    ) -> std::io::Result<()> {
+        self.0.write_options(writer, options)
+    }
+}
+
+#[derive(Debug, BinRead, BinWrite)]
 struct Layer {
     layer_id: i32,
     layer_name: MyString,
     #[br(map = |x: u8| x != 0)]
+    #[binwrite(preprocessor(bool_to_u8))]
     selected: bool,
     #[br(map = |x: u8| x != 0)]
+    #[binwrite(preprocessor(bool_to_u8))]
     invisible: bool,
     #[br(map = |x: u8| x != 0)]
+    #[binwrite(preprocessor(bool_to_u8))]
     locked: bool,
     foreground_type: i32,
     parallax: Vec2,
     #[br(map = |x: u8| x != 0)]
+    #[binwrite(preprocessor(bool_to_u8))]
     fixed_size: bool,
     children: MyVec<i32>,
 }
 
-#[derive(Debug, BinRead)]
+#[derive(Debug, BinRead, BinWrite)]
 struct Object {
     entity_id: i32,
     tile_id: i32,
-    #[br(if(SERIALIZATION_VERSION >= 12))]
-    prefab_entity_id: Option<i32>,
-    #[br(if(SERIALIZATION_VERSION >= 12))]
-    prefab_id: Option<i32>,
+    prefab_entity_id: i32,
+    prefab_id: i32,
     position: Vec2,
     scale: Vec2,
     rotation: f32,
@@ -1367,13 +1948,190 @@ impl BinRead for ObjectProperty {
     }
 }
 
-#[derive(Debug, BinRead)]
+impl BinWrite for ObjectProperty {
+    fn write_options<W: std::io::prelude::Write>(
+        &self,
+        writer: &mut W,
+        options: &binwrite::WriterOption,
+    ) -> std::io::Result<()> {
+        match self {
+            ObjectProperty::Colour(colour) => {
+                writer.write_all(&0_i32.to_le_bytes())?;
+                colour.write_options(writer, options)?;
+            }
+            ObjectProperty::Resolution(resolution) => {
+                writer.write_all(&1_i32.to_le_bytes())?;
+                resolution.write_options(writer, options)?;
+            }
+            ObjectProperty::FillMode(fill_mode) => {
+                writer.write_all(&2_i32.to_le_bytes())?;
+                fill_mode.write_options(writer, options)?;
+            }
+            ObjectProperty::SecondaryColour(secondary_colour) => {
+                writer.write_all(&3_i32.to_le_bytes())?;
+                secondary_colour.write_options(writer, options)?;
+            }
+            ObjectProperty::Thickness(thickness) => {
+                writer.write_all(&4_i32.to_le_bytes())?;
+                thickness.write_options(writer, options)?;
+            }
+            ObjectProperty::TotalAngle(total_angle) => {
+                writer.write_all(&5_i32.to_le_bytes())?;
+                total_angle.write_options(writer, options)?;
+            }
+            ObjectProperty::Corners(corners) => {
+                writer.write_all(&6_i32.to_le_bytes())?;
+                corners.write_options(writer, options)?;
+            }
+            ObjectProperty::Blending(blending) => {
+                writer.write_all(&7_i32.to_le_bytes())?;
+                blending.write_options(writer, options)?;
+            }
+            ObjectProperty::GridOffset(grid_offset) => {
+                writer.write_all(&8_i32.to_le_bytes())?;
+                grid_offset.write_options(writer, options)?;
+            }
+            ObjectProperty::CornerRadius(corner_radius) => {
+                writer.write_all(&9_i32.to_le_bytes())?;
+                corner_radius.write_options(writer, options)?;
+            }
+            ObjectProperty::Width(width) => {
+                writer.write_all(&10_i32.to_le_bytes())?;
+                width.write_options(writer, options)?;
+            }
+            ObjectProperty::Height(height) => {
+                writer.write_all(&11_i32.to_le_bytes())?;
+                height.write_options(writer, options)?;
+            }
+            ObjectProperty::BorderColour(border_colour) => {
+                writer.write_all(&12_i32.to_le_bytes())?;
+                border_colour.write_options(writer, options)?;
+            }
+            ObjectProperty::BorderThickness(border_thickness) => {
+                writer.write_all(&13_i32.to_le_bytes())?;
+                border_thickness.write_options(writer, options)?;
+            }
+            ObjectProperty::PhysicsType(physics_type) => {
+                writer.write_all(&14_i32.to_le_bytes())?;
+                physics_type.write_options(writer, options)?;
+            }
+            ObjectProperty::Friction(friction) => {
+                writer.write_all(&15_i32.to_le_bytes())?;
+                friction.write_options(writer, options)?;
+            }
+            ObjectProperty::TerrainCorners(terrain_corners) => {
+                writer.write_all(&16_i32.to_le_bytes())?;
+                terrain_corners.write_options(writer, options)?;
+            }
+            ObjectProperty::Direction(direction) => {
+                writer.write_all(&17_i32.to_le_bytes())?;
+                direction.write_options(writer, options)?;
+            }
+            ObjectProperty::Impulse(impulse) => {
+                writer.write_all(&18_i32.to_le_bytes())?;
+                impulse.write_options(writer, options)?;
+            }
+            ObjectProperty::Killer(killer) => {
+                writer.write_all(&19_i32.to_le_bytes())?;
+                writer.write_all(&[bool_to_u8(killer)])?;
+            }
+            ObjectProperty::RoundReflexAngles(round_reflex_angles) => {
+                writer.write_all(&20_i32.to_le_bytes())?;
+                writer.write_all(&[bool_to_u8(round_reflex_angles)])?;
+            }
+            ObjectProperty::RoundCollider(round_collider) => {
+                writer.write_all(&21_i32.to_le_bytes())?;
+                writer.write_all(&[bool_to_u8(round_collider)])?;
+            }
+            ObjectProperty::Radius(radius) => {
+                writer.write_all(&22_i32.to_le_bytes())?;
+                radius.write_options(writer, options)?;
+            }
+            ObjectProperty::Size(size) => {
+                writer.write_all(&23_i32.to_le_bytes())?;
+                size.write_options(writer, options)?;
+            }
+            ObjectProperty::ReverseDirection(reverse_direction) => {
+                writer.write_all(&24_i32.to_le_bytes())?;
+                writer.write_all(&[bool_to_u8(reverse_direction)])?;
+            }
+            ObjectProperty::CollisionDetector(collision_detector) => {
+                writer.write_all(&25_i32.to_le_bytes())?;
+                writer.write_all(&[bool_to_u8(collision_detector)])?;
+            }
+            ObjectProperty::Pattern(pattern) => {
+                writer.write_all(&26_i32.to_le_bytes())?;
+                pattern.write_options(writer, options)?;
+            }
+            ObjectProperty::PatternTiling(pattern_tiling) => {
+                writer.write_all(&27_i32.to_le_bytes())?;
+                pattern_tiling.write_options(writer, options)?;
+            }
+            ObjectProperty::PatternOffset(pattern_offset) => {
+                writer.write_all(&28_i32.to_le_bytes())?;
+                pattern_offset.write_options(writer, options)?;
+            }
+            ObjectProperty::Sprite(sprite) => {
+                writer.write_all(&35_i32.to_le_bytes())?;
+                sprite.write_options(writer, options)?;
+            }
+            ObjectProperty::Trigger(trigger) => {
+                writer.write_all(&36_i32.to_le_bytes())?;
+                writer.write_all(&[bool_to_u8(trigger)])?;
+            }
+            ObjectProperty::Health(health) => {
+                writer.write_all(&37_i32.to_le_bytes())?;
+                health.write_options(writer, options)?;
+            }
+            ObjectProperty::DamageFromJump(damage_from_jump) => {
+                writer.write_all(&38_i32.to_le_bytes())?;
+                writer.write_all(&[bool_to_u8(damage_from_jump)])?;
+            }
+            ObjectProperty::DamageFromDash(damage_from_dash) => {
+                writer.write_all(&39_i32.to_le_bytes())?;
+                writer.write_all(&[bool_to_u8(damage_from_dash)])?;
+            }
+            ObjectProperty::ReverseDirOnDamage(reverse_dir_on_damage) => {
+                writer.write_all(&40_i32.to_le_bytes())?;
+                writer.write_all(&[bool_to_u8(reverse_dir_on_damage)])?;
+            }
+            ObjectProperty::Floating(floating) => {
+                writer.write_all(&41_i32.to_le_bytes())?;
+                writer.write_all(&[bool_to_u8(floating)])?;
+            }
+            ObjectProperty::FlipX(flip_x) => {
+                writer.write_all(&43_i32.to_le_bytes())?;
+                writer.write_all(&[bool_to_u8(flip_x)])?;
+            }
+            ObjectProperty::FlipY(flip_y) => {
+                writer.write_all(&44_i32.to_le_bytes())?;
+                writer.write_all(&[bool_to_u8(flip_y)])?;
+            }
+            ObjectProperty::Text(text) => {
+                writer.write_all(&45_i32.to_le_bytes())?;
+                text.write_options(writer, options)?;
+            }
+            ObjectProperty::FontSize(font_size) => {
+                writer.write_all(&46_i32.to_le_bytes())?;
+                font_size.write_options(writer, options)?;
+            }
+            ObjectProperty::EditorColour(editor_colour) => {
+                writer.write_all(&47_i32.to_le_bytes())?;
+                editor_colour.write_options(writer, options)?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
+#[derive(Debug, BinRead, BinWrite)]
 struct Vec2 {
     x: f32,
     y: f32,
 }
 
-#[derive(Debug, BinRead)]
+#[derive(Debug, BinRead, BinWrite)]
 struct Colour {
     r: f32,
     g: f32,
@@ -1381,10 +2139,9 @@ struct Colour {
     a: f32,
 }
 
-#[derive(Debug, BinRead)]
+#[derive(Debug, BinRead, BinWrite)]
 struct AuthorReplay {
-    #[br(map = |x: MyVec<u8>| BASE64_STANDARD.encode(x.0))]
-    replay_data: String,
+    replay_data: MyVec<u8>,
 }
 
 #[derive(Debug)]
@@ -1411,6 +2168,25 @@ impl BinRead for MyString {
     }
 }
 
+impl BinWrite for MyString {
+    fn write_options<W: std::io::prelude::Write>(
+        &self,
+        writer: &mut W,
+        options: &binwrite::WriterOption,
+    ) -> std::io::Result<()> {
+        let bytes = self.0.as_bytes();
+
+        VarInt {
+            inner: bytes.len() as i32,
+        }
+        .write_options(writer, options)?;
+
+        writer.write_all(bytes)?;
+
+        Ok(())
+    }
+}
+
 #[derive(Debug)]
 struct MyVec<T>(Vec<T>);
 
@@ -1430,6 +2206,18 @@ impl<T: BinRead<Args = ()>> BinRead for MyVec<T> {
         let buf = <Vec<T>>::read_options(reader, &options, args)?;
 
         Ok(MyVec(buf))
+    }
+}
+
+impl<T: BinWrite> BinWrite for MyVec<T> {
+    fn write_options<W: std::io::prelude::Write>(
+        &self,
+        writer: &mut W,
+        options: &binwrite::WriterOption,
+    ) -> std::io::Result<()> {
+        writer.write_all(&(self.0.len() as i32).to_le_bytes())?;
+
+        self.0.write_options(writer, options)
     }
 }
 
@@ -1463,4 +2251,39 @@ fn parse_var_int<R: Read + Seek>(
     }
 
     Ok(value)
+}
+
+impl BinWrite for VarInt {
+    fn write_options<W: std::io::prelude::Write>(
+        &self,
+        writer: &mut W,
+        _options: &binwrite::WriterOption,
+    ) -> std::io::Result<()> {
+        let mut value = self.inner;
+
+        loop {
+            let mut current_byte = (value & 0x7F) as u8;
+            value >>= 7;
+
+            if value != 0 {
+                current_byte |= 0x80;
+            }
+
+            writer.write_all(&[current_byte])?;
+
+            if value == 0 {
+                break;
+            }
+        }
+
+        Ok(())
+    }
+}
+
+fn bool_to_u8(value: &bool) -> u8 {
+    if *value {
+        1
+    } else {
+        0
+    }
 }
