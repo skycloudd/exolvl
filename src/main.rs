@@ -11,7 +11,7 @@ fn main() {
 
     let exolvl: Exolvl = file_reader.read_le().unwrap();
 
-    println!("{:#?}\n", exolvl);
+    println!("{:#?}", exolvl);
 }
 
 #[derive(Debug, BinRead)]
@@ -32,8 +32,10 @@ struct LocalLevel {
     level_name: String,
     #[br(map = |x: MyString| x.inner)]
     thumbnail: String,
-    creation_date: i64,
-    update_date: i64,
+    #[br(map = |x: MyDateTime| x.inner)]
+    creation_date: chrono::DateTime<chrono::Utc>,
+    #[br(map = |x: MyDateTime| x.inner)]
+    update_date: chrono::DateTime<chrono::Utc>,
     author_time: i64,
     #[br(map = |x: MyVec<i64>| x.inner)]
     author_lap_times: Vec<i64>,
@@ -43,6 +45,31 @@ struct LocalLevel {
     #[br(map = |x: u8| x != 0)]
     #[br(pad_after = 1)]
     private: bool,
+}
+
+#[derive(Debug)]
+struct MyDateTime {
+    inner: chrono::DateTime<chrono::Utc>,
+}
+
+impl BinRead for MyDateTime {
+    type Args = ();
+
+    fn read_options<R: Read + Seek>(
+        reader: &mut R,
+        _options: &ReadOptions,
+        _args: Self::Args,
+    ) -> BinResult<Self> {
+        const TICKS_TO_SECONDS: i64 = 10_000_000;
+        const EPOCH_DIFFERENCE: i64 = 62_135_596_800;
+
+        let ticks = reader.read_le::<i64>()? & 0x3FFFFFFFFFFFFFFF;
+        let seconds = ticks / TICKS_TO_SECONDS - EPOCH_DIFFERENCE;
+
+        Ok(MyDateTime {
+            inner: chrono::DateTime::<chrono::Utc>::from_timestamp(seconds, 0).unwrap(),
+        })
+    }
 }
 
 #[derive(Debug, BinRead)]
@@ -1405,8 +1432,8 @@ struct Colour {
 
 #[derive(Debug, BinRead)]
 struct AuthorReplay {
-    #[br(map = |x: MyVec<u8>| x.inner)]
-    replay_data: Vec<u8>,
+    #[br(map = |x: MyVec<u8>| BASE64_STANDARD.encode(x.inner))]
+    replay_data: String,
 }
 
 #[derive(Debug, BinRead)]
