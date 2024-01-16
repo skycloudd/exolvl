@@ -23,6 +23,7 @@ struct Exolvl {
 }
 
 #[derive(Debug, BinRead)]
+#[br(assert(serialization_version == SERIALIZATION_VERSION, "incorrect serialization version, must be 16"))]
 struct LocalLevel {
     serialization_version: i32,
     level_id: MyString,
@@ -971,8 +972,7 @@ struct NovaValue {
     has_sub_values: bool,
 
     #[br(if(has_sub_values))]
-    #[br(map = |x: MyVec<NovaValue>| Some(x.0))]
-    sub_values: Option<Vec<NovaValue>>,
+    sub_values: Option<MyVec<NovaValue>>,
 }
 
 macro_rules! define_dynamic_type {
@@ -1410,14 +1410,6 @@ impl BinRead for MyString {
         Ok(MyString(string))
     }
 }
-
-// #[derive(Debug, BinRead)]
-// struct MyVec<T: BinRead<Args = ()>> {
-//     #[br(map = |x: i32| x as u32)]
-//     len: u32,
-//     #[br(count = len)]
-//     inner: Vec<T>,
-// }
 
 #[derive(Debug)]
 struct MyVec<T>(Vec<T>);
