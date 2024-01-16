@@ -85,6 +85,11 @@ struct LevelData {
     scripts: Vec<i32>,
     #[br(map = |x: MyVec<NovaScript>| x.inner)]
     nova_scripts: Vec<NovaScript>,
+    #[br(map = |x: MyVec<Variable>| x.inner)]
+    global_variables: Vec<Variable>,
+    #[br(map = |x: MyString| x.inner)]
+    theme: String,
+    custom_background_colour: Colour,
 }
 
 #[derive(Debug, BinRead)]
@@ -96,20 +101,859 @@ struct NovaScript {
     is_function: bool,
     activation_count: i32,
     condition: NovaValue,
-    // #[br(map = |x: MyVec<Activator>| x.inner)]
-    // activation_list: Vec<Activator>,
-    // #[br(map = |x: MyVec<Parameter>| x.inner)]
-    // parameters: Vec<Parameter>,
-    // #[br(map = |x: MyVec<Variable>| x.inner)]
-    // variables: Vec<Variable>,
-    // #[br(map = |x: MyVec<Action>| x.inner)]
-    // actions: Vec<Action>,
+    #[br(map = |x: MyVec<Activator>| x.inner)]
+    activation_list: Vec<Activator>,
+    #[br(map = |x: MyVec<Parameter>| x.inner)]
+    parameters: Vec<Parameter>,
+    #[br(map = |x: MyVec<Variable>| x.inner)]
+    variables: Vec<Variable>,
+    #[br(map = |x: MyVec<Action>| x.inner)]
+    actions: Vec<Action>,
+}
+
+#[derive(Debug)]
+struct Action {
+    closed: bool,
+    wait: bool,
+    action_type: ActionType,
+}
+
+impl BinRead for Action {
+    type Args = ();
+
+    fn read_options<R: Read + Seek>(
+        reader: &mut R,
+        _options: &ReadOptions,
+        _args: Self::Args,
+    ) -> BinResult<Self> {
+        let action_type = reader.read_le::<i32>()?;
+        let closed = reader.read_le::<u8>()? != 0;
+        let wait = reader.read_le::<u8>()? != 0;
+
+        println!("Action type: {}", action_type);
+
+        Ok(Action {
+            closed,
+            wait,
+            action_type: match action_type {
+                0 => {
+                    let actions = reader.read_le::<MyVec<Action>>()?.inner;
+                    let count = reader.read_le::<NovaValue>()?;
+
+                    ActionType::Repeat { actions, count }
+                }
+                1 => {
+                    let actions = reader.read_le::<MyVec<Action>>()?.inner;
+                    let condition = reader.read_le::<NovaValue>()?;
+
+                    ActionType::RepeatWhile { actions, condition }
+                }
+                2 => {
+                    let if_actions = reader.read_le::<MyVec<Action>>()?.inner;
+                    let else_actions = reader.read_le::<MyVec<Action>>()?.inner;
+                    let condition = reader.read_le::<NovaValue>()?;
+
+                    ActionType::ConditionBlock {
+                        if_actions,
+                        else_actions,
+                        condition,
+                    }
+                }
+                3 => {
+                    let duration = reader.read_le::<NovaValue>()?;
+
+                    ActionType::Wait { duration }
+                }
+                4 => {
+                    let frames = reader.read_le::<NovaValue>()?;
+
+                    ActionType::WaitFrames { frames }
+                }
+                5 => {
+                    let target_objects = reader.read_le::<NovaValue>()?;
+                    let position = reader.read_le::<NovaValue>()?;
+                    let global = reader.read_le::<NovaValue>()?;
+                    let duration = reader.read_le::<NovaValue>()?;
+                    let easing = reader.read_le::<NovaValue>()?;
+
+                    ActionType::Move {
+                        target_objects,
+                        position,
+                        global,
+                        duration,
+                        easing,
+                    }
+                }
+                6 => {
+                    let target_objects = reader.read_le::<NovaValue>()?;
+                    let scale = reader.read_le::<NovaValue>()?;
+                    let duration = reader.read_le::<NovaValue>()?;
+                    let easing = reader.read_le::<NovaValue>()?;
+
+                    ActionType::Scale {
+                        target_objects,
+                        scale,
+                        duration,
+                        easing,
+                    }
+                }
+                7 => {
+                    let target_objects = reader.read_le::<NovaValue>()?;
+                    let rotation = reader.read_le::<NovaValue>()?;
+                    let shortest_path = reader.read_le::<NovaValue>()?;
+                    let global = reader.read_le::<NovaValue>()?;
+                    let duration = reader.read_le::<NovaValue>()?;
+                    let easing = reader.read_le::<NovaValue>()?;
+
+                    ActionType::Rotate {
+                        target_objects,
+                        rotation,
+                        shortest_path,
+                        global,
+                        duration,
+                        easing,
+                    }
+                }
+                8 => {
+                    let target_objects = reader.read_le::<NovaValue>()?;
+                    let pivot = reader.read_le::<NovaValue>()?;
+                    let rotation = reader.read_le::<NovaValue>()?;
+                    let rotate_target = reader.read_le::<NovaValue>()?;
+                    let duration = reader.read_le::<NovaValue>()?;
+                    let easing = reader.read_le::<NovaValue>()?;
+
+                    ActionType::RotateAround {
+                        target_objects,
+                        pivot,
+                        rotation,
+                        rotate_target,
+                        duration,
+                        easing,
+                    }
+                }
+                9 => {
+                    let variable = reader.read_le::<i32>()?;
+
+                    let value = if reader.read_le::<u8>()? != 0 {
+                        Some(reader.read_le::<NovaValue>()?)
+                    } else {
+                        None
+                    };
+
+                    ActionType::SetVariable { variable, value }
+                }
+                10 => {
+                    let variable = reader.read_le::<i32>()?;
+
+                    ActionType::ResetVariable { variable }
+                }
+                11 => {
+                    let target_objects = reader.read_le::<NovaValue>()?;
+
+                    ActionType::ResetObject { target_objects }
+                }
+                12 => {
+                    let target_objects = reader.read_le::<NovaValue>()?;
+                    let color = reader.read_le::<NovaValue>()?;
+                    let channel = reader.read_le::<NovaValue>()?;
+                    let duration = reader.read_le::<NovaValue>()?;
+                    let easing = reader.read_le::<NovaValue>()?;
+
+                    ActionType::SetColor {
+                        target_objects,
+                        color,
+                        channel,
+                        duration,
+                        easing,
+                    }
+                }
+                13 => {
+                    let target_objects = reader.read_le::<NovaValue>()?;
+                    let transparency = reader.read_le::<NovaValue>()?;
+                    let channel = reader.read_le::<NovaValue>()?;
+                    let duration = reader.read_le::<NovaValue>()?;
+                    let easing = reader.read_le::<NovaValue>()?;
+
+                    ActionType::SetTransparency {
+                        target_objects,
+                        transparency,
+                        channel,
+                        duration,
+                        easing,
+                    }
+                }
+                14 => {
+                    let target_objects = reader.read_le::<NovaValue>()?;
+                    let color = reader.read_le::<NovaValue>()?;
+                    let duration = reader.read_le::<NovaValue>()?;
+                    let easing = reader.read_le::<NovaValue>()?;
+
+                    ActionType::SetSecondaryColor {
+                        target_objects,
+                        color,
+                        duration,
+                        easing,
+                    }
+                }
+                15 => {
+                    let target_objects = reader.read_le::<NovaValue>()?;
+                    let transparency = reader.read_le::<NovaValue>()?;
+                    let duration = reader.read_le::<NovaValue>()?;
+                    let easing = reader.read_le::<NovaValue>()?;
+
+                    ActionType::SetSecondaryTransparency {
+                        target_objects,
+                        transparency,
+                        duration,
+                        easing,
+                    }
+                }
+                16 => {
+                    let target_objects = reader.read_le::<NovaValue>()?;
+                    let color = reader.read_le::<NovaValue>()?;
+                    let duration = reader.read_le::<NovaValue>()?;
+                    let easing = reader.read_le::<NovaValue>()?;
+
+                    ActionType::SetBorderColor {
+                        target_objects,
+                        color,
+                        duration,
+                        easing,
+                    }
+                }
+                17 => {
+                    let target_objects = reader.read_le::<NovaValue>()?;
+                    let transparency = reader.read_le::<NovaValue>()?;
+                    let duration = reader.read_le::<NovaValue>()?;
+                    let easing = reader.read_le::<NovaValue>()?;
+
+                    ActionType::SetBorderTransparency {
+                        target_objects,
+                        transparency,
+                        duration,
+                        easing,
+                    }
+                }
+                18 => {
+                    let target_objects = reader.read_le::<NovaValue>()?;
+                    let sprite = reader.read_le::<NovaValue>()?;
+
+                    ActionType::SetSprite {
+                        target_objects,
+                        sprite,
+                    }
+                }
+                19 => {
+                    let target_objects = reader.read_le::<NovaValue>()?;
+                    let text = reader.read_le::<NovaValue>()?;
+
+                    ActionType::SetText {
+                        target_objects,
+                        text,
+                    }
+                }
+                20 => {
+                    let target_objects = reader.read_le::<NovaValue>()?;
+                    let enabled = reader.read_le::<NovaValue>()?;
+
+                    ActionType::SetEnabled {
+                        target_objects,
+                        enabled,
+                    }
+                }
+                21 => {
+                    let target_objects = reader.read_le::<NovaValue>()?;
+
+                    ActionType::Activate { target_objects }
+                }
+                22 => {
+                    let target_objects = reader.read_le::<NovaValue>()?;
+
+                    ActionType::Deactivate { target_objects }
+                }
+                23 => {
+                    let target_objects = reader.read_le::<NovaValue>()?;
+                    let damage = reader.read_le::<NovaValue>()?;
+
+                    ActionType::Damage {
+                        target_objects,
+                        damage,
+                    }
+                }
+                24 => {
+                    let target_objects = reader.read_le::<NovaValue>()?;
+
+                    ActionType::Kill { target_objects }
+                }
+                25 => ActionType::GameFinish {},
+                26 => {
+                    let position = reader.read_le::<NovaValue>()?;
+                    let duration = reader.read_le::<NovaValue>()?;
+                    let easing = reader.read_le::<NovaValue>()?;
+
+                    ActionType::CameraPan {
+                        position,
+                        duration,
+                        easing,
+                    }
+                }
+                27 => ActionType::CameraFollowPlayer {},
+                28 => {
+                    let viewport_size = reader.read_le::<NovaValue>()?;
+                    let duration = reader.read_le::<NovaValue>()?;
+                    let easing = reader.read_le::<NovaValue>()?;
+
+                    ActionType::CameraZoom {
+                        viewport_size,
+                        duration,
+                        easing,
+                    }
+                }
+                29 => {
+                    let duration = reader.read_le::<NovaValue>()?;
+                    let easing = reader.read_le::<NovaValue>()?;
+
+                    ActionType::CameraZoomReset { duration, easing }
+                }
+                30 => {
+                    let offset = reader.read_le::<NovaValue>()?;
+                    let duration = reader.read_le::<NovaValue>()?;
+                    let easing = reader.read_le::<NovaValue>()?;
+
+                    ActionType::CameraOffset {
+                        offset,
+                        duration,
+                        easing,
+                    }
+                }
+                31 => {
+                    let duration = reader.read_le::<NovaValue>()?;
+                    let easing = reader.read_le::<NovaValue>()?;
+
+                    ActionType::CameraOffsetReset { duration, easing }
+                }
+                32 => {
+                    let strength = reader.read_le::<NovaValue>()?;
+                    let roughness = reader.read_le::<NovaValue>()?;
+                    let fade_in = reader.read_le::<NovaValue>()?;
+                    let fade_out = reader.read_le::<NovaValue>()?;
+                    let duration = reader.read_le::<NovaValue>()?;
+
+                    ActionType::CameraShake {
+                        strength,
+                        roughness,
+                        fade_in,
+                        fade_out,
+                        duration,
+                    }
+                }
+                33 => {
+                    let sound = reader.read_le::<NovaValue>()?;
+                    let volume = reader.read_le::<NovaValue>()?;
+                    let pitch = reader.read_le::<NovaValue>()?;
+
+                    ActionType::PlaySound {
+                        sound,
+                        volume,
+                        pitch,
+                    }
+                }
+                34 => {
+                    let music = reader.read_le::<NovaValue>()?;
+                    let volume = reader.read_le::<NovaValue>()?;
+                    let pitch = reader.read_le::<NovaValue>()?;
+
+                    ActionType::PlayMusic {
+                        music,
+                        volume,
+                        pitch,
+                    }
+                }
+                35 => {
+                    let target_objects = reader.read_le::<NovaValue>()?;
+                    let direction = reader.read_le::<NovaValue>()?;
+
+                    ActionType::SetDirection {
+                        target_objects,
+                        direction,
+                    }
+                }
+                36 => {
+                    let target_objects = reader.read_le::<NovaValue>()?;
+                    let gravity = reader.read_le::<NovaValue>()?;
+
+                    ActionType::SetGravity {
+                        target_objects,
+                        gravity,
+                    }
+                }
+                37 => {
+                    let target_objects = reader.read_le::<NovaValue>()?;
+                    let velocity = reader.read_le::<NovaValue>()?;
+
+                    ActionType::SetVelocity {
+                        target_objects,
+                        velocity,
+                    }
+                }
+                38 => {
+                    let enabled = reader.read_le::<NovaValue>()?;
+
+                    ActionType::SetCinematic { enabled }
+                }
+                39 => {
+                    let enabled = reader.read_le::<NovaValue>()?;
+
+                    ActionType::SetInputEnabled { enabled }
+                }
+                40 => {
+                    let enabled = reader.read_le::<NovaValue>()?;
+
+                    ActionType::SetTimerEnabled { enabled }
+                }
+                41 => {
+                    let text = reader.read_le::<NovaValue>()?;
+                    let duration = reader.read_le::<NovaValue>()?;
+
+                    ActionType::GameTextShow { text, duration }
+                }
+                42 => {
+                    let text = reader.read_le::<NovaValue>()?;
+                    let position = reader.read_le::<NovaValue>()?;
+                    let reverse_direction = reader.read_le::<NovaValue>()?;
+
+                    ActionType::DialogueShow {
+                        text,
+                        position,
+                        reverse_direction,
+                    }
+                }
+                43 => {
+                    let script = reader.read_le::<NovaValue>()?;
+
+                    ActionType::StopScript { script }
+                }
+                44 => {
+                    let type_ = reader.read_le::<NovaValue>()?;
+                    let color = reader.read_le::<NovaValue>()?;
+                    let duration = reader.read_le::<NovaValue>()?;
+                    let easing = reader.read_le::<NovaValue>()?;
+
+                    ActionType::TransitionIn {
+                        type_,
+                        color,
+                        duration,
+                        easing,
+                    }
+                }
+                45 => {
+                    let type_ = reader.read_le::<NovaValue>()?;
+                    let color = reader.read_le::<NovaValue>()?;
+                    let duration = reader.read_le::<NovaValue>()?;
+                    let easing = reader.read_le::<NovaValue>()?;
+
+                    ActionType::TransitionOut {
+                        type_,
+                        color,
+                        duration,
+                        easing,
+                    }
+                }
+                46 => {
+                    let time_scale = reader.read_le::<NovaValue>()?;
+                    let duration = reader.read_le::<NovaValue>()?;
+                    let easing = reader.read_le::<NovaValue>()?;
+
+                    ActionType::TimeScale {
+                        time_scale,
+                        duration,
+                        easing,
+                    }
+                }
+                47 => {
+                    let function = reader.read_le::<FunctionCall>()?;
+
+                    ActionType::RunFunction { function }
+                }
+                48 => {
+                    let variable = reader.read_le::<i32>()?;
+
+                    let value = if reader.read_le::<u8>()? == 0 {
+                        Some(reader.read_le::<NovaValue>()?)
+                    } else {
+                        None
+                    };
+
+                    let duration = reader.read_le::<NovaValue>()?;
+                    let easing = reader.read_le::<NovaValue>()?;
+
+                    ActionType::SetVariableOverTime {
+                        variable,
+                        value,
+                        duration,
+                        easing,
+                    }
+                }
+                49 => {
+                    let target_objects = reader.read_le::<NovaValue>()?;
+                    let actions = reader.read_le::<MyVec<Action>>()?.inner;
+
+                    ActionType::RepeatForEachObject {
+                        target_objects,
+                        actions,
+                    }
+                }
+                _ => panic!("Unknown action type: {}", action_type),
+            },
+        })
+    }
+}
+
+#[derive(Debug)]
+enum ActionType {
+    Repeat {
+        actions: Vec<Action>,
+        count: NovaValue,
+    },
+    RepeatWhile {
+        actions: Vec<Action>,
+        condition: NovaValue,
+    },
+    ConditionBlock {
+        if_actions: Vec<Action>,
+        else_actions: Vec<Action>,
+        condition: NovaValue,
+    },
+    Wait {
+        duration: NovaValue,
+    },
+    WaitFrames {
+        frames: NovaValue,
+    },
+    Move {
+        target_objects: NovaValue,
+        position: NovaValue,
+        global: NovaValue,
+        duration: NovaValue,
+        easing: NovaValue,
+    },
+    Scale {
+        target_objects: NovaValue,
+        scale: NovaValue,
+        duration: NovaValue,
+        easing: NovaValue,
+    },
+    Rotate {
+        target_objects: NovaValue,
+        rotation: NovaValue,
+        shortest_path: NovaValue,
+        global: NovaValue,
+        duration: NovaValue,
+        easing: NovaValue,
+    },
+    RotateAround {
+        target_objects: NovaValue,
+        pivot: NovaValue,
+        rotation: NovaValue,
+        rotate_target: NovaValue,
+        duration: NovaValue,
+        easing: NovaValue,
+    },
+    SetVariable {
+        variable: i32,
+        value: Option<NovaValue>,
+    },
+    ResetVariable {
+        variable: i32,
+    },
+    ResetObject {
+        target_objects: NovaValue,
+    },
+    SetColor {
+        target_objects: NovaValue,
+        color: NovaValue,
+        channel: NovaValue,
+        duration: NovaValue,
+        easing: NovaValue,
+    },
+    SetTransparency {
+        target_objects: NovaValue,
+        transparency: NovaValue,
+        channel: NovaValue,
+        duration: NovaValue,
+        easing: NovaValue,
+    },
+    SetSecondaryColor {
+        target_objects: NovaValue,
+        color: NovaValue,
+        duration: NovaValue,
+        easing: NovaValue,
+    },
+    SetSecondaryTransparency {
+        target_objects: NovaValue,
+        transparency: NovaValue,
+        duration: NovaValue,
+        easing: NovaValue,
+    },
+    SetBorderColor {
+        target_objects: NovaValue,
+        color: NovaValue,
+        duration: NovaValue,
+        easing: NovaValue,
+    },
+    SetBorderTransparency {
+        target_objects: NovaValue,
+        transparency: NovaValue,
+        duration: NovaValue,
+        easing: NovaValue,
+    },
+    SetSprite {
+        target_objects: NovaValue,
+        sprite: NovaValue,
+    },
+    SetText {
+        target_objects: NovaValue,
+        text: NovaValue,
+    },
+    SetEnabled {
+        target_objects: NovaValue,
+        enabled: NovaValue,
+    },
+    Activate {
+        target_objects: NovaValue,
+    },
+    Deactivate {
+        target_objects: NovaValue,
+    },
+    Damage {
+        target_objects: NovaValue,
+        damage: NovaValue,
+    },
+    Kill {
+        target_objects: NovaValue,
+    },
+    GameFinish {},
+    CameraPan {
+        position: NovaValue,
+        duration: NovaValue,
+        easing: NovaValue,
+    },
+    CameraFollowPlayer {},
+    CameraZoom {
+        viewport_size: NovaValue,
+        duration: NovaValue,
+        easing: NovaValue,
+    },
+    CameraZoomReset {
+        duration: NovaValue,
+        easing: NovaValue,
+    },
+    CameraOffset {
+        offset: NovaValue,
+        duration: NovaValue,
+        easing: NovaValue,
+    },
+    CameraOffsetReset {
+        duration: NovaValue,
+        easing: NovaValue,
+    },
+    CameraShake {
+        strength: NovaValue,
+        roughness: NovaValue,
+        fade_in: NovaValue,
+        fade_out: NovaValue,
+        duration: NovaValue,
+    },
+    PlaySound {
+        sound: NovaValue,
+        volume: NovaValue,
+        pitch: NovaValue,
+    },
+    PlayMusic {
+        music: NovaValue,
+        volume: NovaValue,
+        pitch: NovaValue,
+    },
+    SetDirection {
+        target_objects: NovaValue,
+        direction: NovaValue,
+    },
+    SetGravity {
+        target_objects: NovaValue,
+        gravity: NovaValue,
+    },
+    SetVelocity {
+        target_objects: NovaValue,
+        velocity: NovaValue,
+    },
+    SetCinematic {
+        enabled: NovaValue,
+    },
+    SetInputEnabled {
+        enabled: NovaValue,
+    },
+    SetTimerEnabled {
+        enabled: NovaValue,
+    },
+    GameTextShow {
+        text: NovaValue,
+        duration: NovaValue,
+    },
+    DialogueShow {
+        text: NovaValue,
+        position: NovaValue,
+        reverse_direction: NovaValue,
+    },
+    StopScript {
+        script: NovaValue,
+    },
+    TransitionIn {
+        type_: NovaValue,
+        color: NovaValue,
+        duration: NovaValue,
+        easing: NovaValue,
+    },
+    TransitionOut {
+        type_: NovaValue,
+        color: NovaValue,
+        duration: NovaValue,
+        easing: NovaValue,
+    },
+    TimeScale {
+        time_scale: NovaValue,
+        duration: NovaValue,
+        easing: NovaValue,
+    },
+    RunFunction {
+        function: FunctionCall,
+    },
+    SetVariableOverTime {
+        variable: i32,
+        value: Option<NovaValue>,
+        duration: NovaValue,
+        easing: NovaValue,
+    },
+    RepeatForEachObject {
+        target_objects: NovaValue,
+        actions: Vec<Action>,
+    },
 }
 
 #[derive(Debug, BinRead)]
+struct FunctionCall {
+    id: i32,
+    #[br(map = |x: MyVec<CallParameter>| x.inner)]
+    parameters: Vec<CallParameter>,
+}
+
+#[derive(Debug, BinRead)]
+struct CallParameter {
+    parameter_id: i32,
+    value: NovaValue,
+}
+
+#[derive(Debug, BinRead)]
+struct Variable {
+    variable_id: i32,
+    #[br(map = |x: MyString| x.inner)]
+    name: String,
+    #[br(map = |x: i32| x.try_into().unwrap())]
+    static_type: StaticType,
+    dynamic_type: NovaValue,
+}
+
+#[derive(Debug, BinRead)]
+struct Parameter {
+    parameter_id: i32,
+    #[br(map = |x: MyString| x.inner)]
+    name: String,
+    #[br(map = |x: i32| x.try_into().unwrap())]
+    static_type: StaticType,
+    dynamic_type: NovaValue,
+}
+
+macro_rules! define_static_type {
+    ($($name:ident = $number:expr),*) => {
+        #[derive(Debug)]
+        #[repr(i32)]
+        enum StaticType {
+            $($name = $number),*
+        }
+
+        impl TryFrom<i32> for StaticType {
+            type Error = ();
+
+            fn try_from(value: i32) -> Result<Self, Self::Error> {
+                match value {
+                    $($number => Ok(StaticType::$name),)*
+                    _ => Err(())
+                }
+            }
+        }
+    };
+}
+
+define_static_type!(
+    Bool = 0,
+    Int = 1,
+    Float = 2,
+    String = 3,
+    Color = 4,
+    Vector = 5,
+    Sound = 6,
+    Music = 7,
+    Object = 8,
+    ObjectSet = 9,
+    Transition = 10,
+    Easing = 11,
+    Sprite = 12,
+    Script = 13,
+    Layer = 14
+);
+
+#[derive(Debug, BinRead)]
+struct Activator {
+    activator_type: i32,
+    #[br(map = |x: MyVec<NovaValue>| x.inner)]
+    parameters: Vec<NovaValue>,
+}
+
+#[binread::derive_binread]
+#[derive(Debug)]
 struct NovaValue {
     #[br(map = |x: i32| x.try_into().unwrap())]
     dynamic_type: DynamicType,
+    #[br(map = |x: u8| x != 0)]
+    bool_value: bool,
+    int_value: i32,
+    float_value: f32,
+
+    #[br(temp)]
+    #[br(map = |x: u8| x != 0)]
+    has_string_value: bool,
+
+    #[br(if(has_string_value))]
+    #[br(map = |x: MyString| Some(x.inner))]
+    string_value: Option<String>,
+
+    color_value: Colour,
+    vector_value: Vec2,
+
+    #[br(temp)]
+    #[br(map = |x: u8| x != 0)]
+    has_int_list: bool,
+
+    #[br(if(has_int_list))]
+    #[br(map = |x: MyVec<i32>| Some(x.inner))]
+    int_list_value: Option<Vec<i32>>,
+
+    #[br(temp)]
+    #[br(map = |x: u8| x != 0)]
+    has_sub_values: bool,
+
+    #[br(if(has_sub_values))]
+    #[br(map = |x: MyVec<NovaValue>| Some(x.inner))]
+    sub_values: Option<Vec<NovaValue>>,
 }
 
 macro_rules! define_dynamic_type {
