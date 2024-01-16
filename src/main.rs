@@ -7,7 +7,7 @@ use std::io::{Read, Seek};
 const SERIALIZATION_VERSION: i32 = 16;
 
 fn main() {
-    let mut file_reader = std::fs::File::open("New_level.exolvl.idk").unwrap();
+    let mut file_reader = std::fs::File::open("testlvl.exolvl.bin").unwrap();
 
     let exolvl: Exolvl = file_reader.read_le().unwrap();
 
