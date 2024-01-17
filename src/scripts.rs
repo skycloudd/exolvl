@@ -1,204 +1,28 @@
-#![allow(dead_code)]
-
-use binread::{BinRead, BinReaderExt, BinResult, ReadOptions};
+use crate::{bool_to_u8, Colour, MyString, MyVec, Vec2};
+use binread::{BinRead, BinReaderExt as _, BinResult, ReadOptions};
 use binwrite::BinWrite;
 use std::io::{Read, Seek};
 
-const SERIALIZATION_VERSION: i32 = 16;
-
-fn main() {
-    let mut file_reader = std::fs::File::open("testlvl.exolvl.bin").unwrap();
-
-    let exolvl: Exolvl = file_reader.read_le().unwrap();
-
-    println!("{:#?}", exolvl);
-
-    write(exolvl);
-}
-
-fn write(exolvl: Exolvl) {
-    let mut buf = vec![];
-
-    exolvl.write(&mut buf).unwrap();
-
-    std::fs::write("testlvl.exolvl.bin.out", buf).unwrap();
-}
-
-#[derive(Debug, BinRead)]
-#[br(magic = b"NYA^")]
-struct Exolvl {
-    local_level: LocalLevel,
-    level_data: LevelData,
-    author_replay: AuthorReplay,
-}
-
-impl BinWrite for Exolvl {
-    fn write_options<W: std::io::prelude::Write>(
-        &self,
-        writer: &mut W,
-        options: &binwrite::WriterOption,
-    ) -> std::io::Result<()> {
-        writer.write_all(b"NYA^")?;
-
-        self.local_level.write_options(writer, options)?;
-
-        self.level_data.write_options(writer, options)?;
-
-        self.author_replay.write_options(writer, options)?;
-
-        Ok(())
-    }
-}
-
 #[derive(Debug, BinRead, BinWrite)]
-#[br(assert(serialization_version == SERIALIZATION_VERSION, "incorrect serialization version, must be 16"))]
-struct LocalLevel {
-    serialization_version: i32,
-    level_id: MyString,
-    level_version: i32,
-    level_name: MyString,
-    thumbnail: MyString,
-    creation_date: MyDateTime,
-    update_date: MyDateTime,
-    author_time: i64,
-    author_lap_times: MyVec<i64>,
-    silver_medal_time: i64,
-    gold_medal_time: i64,
-    laps: i32,
+pub struct NovaScript {
+    pub script_id: i32,
+    pub script_name: MyString,
     #[br(map = |x: u8| x != 0)]
-    #[binwrite(preprocessor(bool_to_u8))]
-    private: bool,
-
-    unknown_1: u8,
+    #[binwrite(preprocessor(|x: &bool| bool_to_u8(*x)))]
+    pub is_function: bool,
+    pub activation_count: i32,
+    pub condition: NovaValue,
+    pub activation_list: MyVec<Activator>,
+    pub parameters: MyVec<Parameter>,
+    pub variables: MyVec<Variable>,
+    pub actions: MyVec<Action>,
 }
 
 #[derive(Debug)]
-struct MyDateTime {
-    inner: chrono::DateTime<chrono::Utc>,
-    ticks: i64,
-}
-
-impl BinRead for MyDateTime {
-    type Args = ();
-
-    fn read_options<R: Read + Seek>(
-        reader: &mut R,
-        _options: &ReadOptions,
-        _args: Self::Args,
-    ) -> BinResult<Self> {
-        const TICKS_TO_SECONDS: i64 = 10_000_000;
-        const EPOCH_DIFFERENCE: i64 = 62_135_596_800;
-
-        let ticks = reader.read_le::<i64>()?;
-
-        let masked_ticks = ticks & 0x3FFFFFFFFFFFFFFF;
-        let seconds = masked_ticks / TICKS_TO_SECONDS - EPOCH_DIFFERENCE;
-
-        Ok(MyDateTime {
-            inner: chrono::DateTime::<chrono::Utc>::from_timestamp(seconds, 0).unwrap(),
-            ticks,
-        })
-    }
-}
-
-impl BinWrite for MyDateTime {
-    fn write_options<W: std::io::prelude::Write>(
-        &self,
-        writer: &mut W,
-        _options: &binwrite::WriterOption,
-    ) -> std::io::Result<()> {
-        writer.write_all(&self.ticks.to_le_bytes())?;
-
-        Ok(())
-    }
-}
-
-#[derive(Debug, BinRead, BinWrite)]
-struct LevelData {
-    level_id: MyString,
-    level_version: i32,
-    #[br(map = |x: u8| x != 0)]
-    #[binwrite(preprocessor(bool_to_u8))]
-    nova_level: bool,
-    under_decoration_tiles: MyVec<i32>,
-    background_decoration_tiles_2: MyVec<i32>,
-    terrain_tiles: MyVec<i32>,
-    floating_zone_tiles: MyVec<i32>,
-    object_tiles: MyVec<i32>,
-    foreground_decoration_tiles: MyVec<i32>,
-    objects: MyVec<Object>,
-    layers: MyVec<Layer>,
-    prefabs: MyVec<Prefab>,
-    brushes: MyVec<Brush>,
-    patterns: MyVec<Pattern>,
-    author_time: i64,
-    author_lap_times: MyVec<i64>,
-    silver_medal_time: i64,
-    gold_medal_time: i64,
-    laps: i32,
-    #[br(map = |x: u8| x != 0)]
-    #[binwrite(preprocessor(bool_to_u8))]
-    center_camera: bool,
-    scripts: MyVec<i32>,
-    nova_scripts: MyVec<NovaScript>,
-    global_variables: MyVec<Variable>,
-    theme: MyString,
-    custom_background_colour: Colour,
-
-    #[br(count = 24)]
-    _unknown1: Vec<u8>,
-
-    custom_terrain_colour: Colour,
-
-    #[br(count = 20)]
-    _unknown_2: Vec<u8>,
-
-    custom_terrain_border_colour: Colour,
-    custom_terrain_border_thickness: f32,
-    custom_terrain_border_corner_radius: f32,
-
-    #[br(count = 6)]
-    _unknown_3: Vec<u8>,
-
-    #[br(map = |x: u8| x != 0)]
-    #[binwrite(preprocessor(bool_to_u8))]
-    default_music: bool,
-    music_ids: MyVec<MyString>,
-    #[br(map = |x: u8| x != 0)]
-    #[binwrite(preprocessor(bool_to_u8))]
-    allow_direction_change: bool,
-    #[br(map = |x: u8| x != 0)]
-    #[binwrite(preprocessor(bool_to_u8))]
-    disable_replays: bool,
-    #[br(map = |x: u8| x != 0)]
-    #[binwrite(preprocessor(bool_to_u8))]
-    disable_revive_pads: bool,
-    #[br(map = |x: u8| x != 0)]
-    #[binwrite(preprocessor(bool_to_u8))]
-    disable_start_animation: bool,
-    gravity: Vec2,
-}
-
-#[derive(Debug, BinRead, BinWrite)]
-struct NovaScript {
-    script_id: i32,
-    script_name: MyString,
-    #[br(map = |x: u8| x != 0)]
-    #[binwrite(preprocessor(bool_to_u8))]
-    is_function: bool,
-    activation_count: i32,
-    condition: NovaValue,
-    activation_list: MyVec<Activator>,
-    parameters: MyVec<Parameter>,
-    variables: MyVec<Variable>,
-    actions: MyVec<Action>,
-}
-
-#[derive(Debug)]
-struct Action {
-    closed: bool,
-    wait: bool,
-    action_type: ActionType,
+pub struct Action {
+    pub closed: bool,
+    pub wait: bool,
+    pub action_type: ActionType,
 }
 
 impl BinRead for Action {
@@ -213,25 +37,25 @@ impl BinRead for Action {
         let closed = reader.read_le::<u8>()? != 0;
         let wait = reader.read_le::<u8>()? != 0;
 
-        Ok(Action {
+        Ok(Self {
             closed,
             wait,
             action_type: match action_type {
                 0 => {
-                    let actions = reader.read_le::<MyVec<Action>>()?;
+                    let actions = reader.read_le::<MyVec<Self>>()?;
                     let count = reader.read_le::<NovaValue>()?;
 
                     ActionType::Repeat { actions, count }
                 }
                 1 => {
-                    let actions = reader.read_le::<MyVec<Action>>()?;
+                    let actions = reader.read_le::<MyVec<Self>>()?;
                     let condition = reader.read_le::<NovaValue>()?;
 
                     ActionType::RepeatWhile { actions, condition }
                 }
                 2 => {
-                    let if_actions = reader.read_le::<MyVec<Action>>()?;
-                    let else_actions = reader.read_le::<MyVec<Action>>()?;
+                    let if_actions = reader.read_le::<MyVec<Self>>()?;
+                    let else_actions = reader.read_le::<MyVec<Self>>()?;
                     let condition = reader.read_le::<NovaValue>()?;
 
                     ActionType::ConditionBlock {
@@ -677,14 +501,14 @@ impl BinRead for Action {
                 }
                 49 => {
                     let target_objects = reader.read_le::<NovaValue>()?;
-                    let actions = reader.read_le::<MyVec<Action>>()?;
+                    let actions = reader.read_le::<MyVec<Self>>()?;
 
                     ActionType::RepeatForEachObject {
                         target_objects,
                         actions,
                     }
                 }
-                _ => panic!("Unknown action type: {}", action_type),
+                _ => panic!("Unknown action type: {action_type}"),
             },
         })
     }
@@ -751,8 +575,8 @@ impl BinWrite for Action {
 
         writer.write_all(&type_.to_le_bytes())?;
 
-        writer.write_all(&bool_to_u8(&self.closed).to_le_bytes())?;
-        writer.write_all(&bool_to_u8(&self.wait).to_le_bytes())?;
+        writer.write_all(&bool_to_u8(self.closed).to_le_bytes())?;
+        writer.write_all(&bool_to_u8(self.wait).to_le_bytes())?;
 
         match &self.action_type {
             ActionType::Repeat { actions, count } => {
@@ -1135,7 +959,7 @@ impl BinWrite for Action {
 }
 
 #[derive(Debug)]
-enum ActionType {
+pub enum ActionType {
     Repeat {
         actions: MyVec<Action>,
         count: NovaValue,
@@ -1364,131 +1188,39 @@ enum ActionType {
     },
 }
 
-#[derive(Debug, BinRead, BinWrite)]
-struct FunctionCall {
-    id: i32,
-    parameters: MyVec<CallParameter>,
-}
-
-#[derive(Debug, BinRead, BinWrite)]
-struct CallParameter {
-    parameter_id: i32,
-    value: NovaValue,
-}
-
-#[derive(Debug, BinRead, BinWrite)]
-struct Variable {
-    variable_id: i32,
-    name: MyString,
-    #[br(map = |x: i32| x.try_into().unwrap())]
-    static_type: StaticType,
-    dynamic_type: NovaValue,
-}
-
-#[derive(Debug, BinRead, BinWrite)]
-struct Parameter {
-    parameter_id: i32,
-    name: MyString,
-    #[br(map = |x: i32| x.try_into().unwrap())]
-    static_type: StaticType,
-    dynamic_type: NovaValue,
-}
-
-macro_rules! define_static_type {
-    ($($name:ident = $number:expr),*) => {
-        #[derive(Debug)]
-        enum StaticType {
-            $($name = $number),*
-        }
-
-        impl TryFrom<i32> for StaticType {
-            type Error = ();
-
-            fn try_from(value: i32) -> Result<Self, Self::Error> {
-                match value {
-                    $($number => Ok(StaticType::$name),)*
-                    _ => Err(())
-                }
-            }
-        }
-
-        impl From<&StaticType> for i32 {
-            fn from(value: &StaticType) -> Self {
-                match value {
-                    $(StaticType::$name => $number,)*
-                }
-            }
-        }
-    };
-}
-
-define_static_type!(
-    Bool = 0,
-    Int = 1,
-    Float = 2,
-    String = 3,
-    Color = 4,
-    Vector = 5,
-    Sound = 6,
-    Music = 7,
-    Object = 8,
-    ObjectSet = 9,
-    Transition = 10,
-    Easing = 11,
-    Sprite = 12,
-    Script = 13,
-    Layer = 14
-);
-
-impl BinWrite for StaticType {
-    fn write_options<W: std::io::prelude::Write>(
-        &self,
-        writer: &mut W,
-        _options: &binwrite::WriterOption,
-    ) -> std::io::Result<()> {
-        writer.write_all(&Into::<i32>::into(self).to_le_bytes())
-    }
-}
-
-#[derive(Debug, BinRead, BinWrite)]
-struct Activator {
-    activator_type: i32,
-    parameters: MyVec<NovaValue>,
-}
-
 #[binread::derive_binread]
 #[derive(Debug)]
-struct NovaValue {
+pub struct NovaValue {
     #[br(map = |x: i32| x.try_into().unwrap())]
-    dynamic_type: DynamicType,
+    pub dynamic_type: DynamicType,
     #[br(map = |x: u8| x != 0)]
-    bool_value: bool,
-    int_value: i32,
-    float_value: f32,
+    pub bool_value: bool,
+    pub int_value: i32,
+    pub float_value: f32,
 
     #[br(temp)]
     #[br(map = |x: u8| x != 0)]
     has_string_value: bool,
 
     #[br(if(has_string_value))]
-    string_value: Option<MyString>,
+    pub string_value: Option<MyString>,
 
-    color_value: Colour,
-    vector_value: Vec2,
+    pub color_value: Colour,
+    pub vector_value: Vec2,
 
     #[br(temp)]
     #[br(map = |x: u8| x != 0)]
     has_int_list: bool,
 
     #[br(if(has_int_list))]
-    int_list_value: Option<MyVec<i32>>,
+    pub int_list_value: Option<MyVec<i32>>,
 
     #[br(temp)]
     #[br(map = |x: u8| x != 0)]
     has_sub_values: bool,
 
     #[br(if(has_sub_values))]
-    sub_values: Option<MyVec<NovaValue>>,
+    pub sub_values: Option<MyVec<NovaValue>>,
 }
 
 impl BinWrite for NovaValue {
@@ -1499,7 +1231,7 @@ impl BinWrite for NovaValue {
     ) -> std::io::Result<()> {
         writer.write_all(&Into::<i32>::into(&self.dynamic_type).to_le_bytes())?;
 
-        writer.write_all(&[bool_to_u8(&self.bool_value)])?;
+        writer.write_all(&[bool_to_u8(self.bool_value)])?;
 
         writer.write_all(&self.int_value.to_le_bytes())?;
 
@@ -1537,7 +1269,7 @@ impl BinWrite for NovaValue {
 macro_rules! define_dynamic_type {
     ($($name:ident = $number:expr),*) => {
         #[derive(Debug)]
-        enum DynamicType {
+        pub enum DynamicType {
             $($name = $number),*
         }
 
@@ -1746,544 +1478,93 @@ define_dynamic_type!(
 );
 
 #[derive(Debug, BinRead, BinWrite)]
-struct Pattern {
-    pattern_id: i32,
-    pattern_frames: MyVec<Image>,
+pub struct FunctionCall {
+    pub id: i32,
+    pub parameters: MyVec<CallParameter>,
 }
 
 #[derive(Debug, BinRead, BinWrite)]
-struct Brush {
-    brush_id: i32,
-    spread: Vec2,
-    frequency: f32,
-    grid: BrushGrid,
-    objects: MyVec<BrushObject>,
+pub struct CallParameter {
+    pub parameter_id: i32,
+    pub value: NovaValue,
 }
 
 #[derive(Debug, BinRead, BinWrite)]
-struct BrushObject {
-    entity_id: i32,
-    properties: MyVec<ObjectProperty>,
-    weight: f32,
-    scale: f32,
-    rotation: f32,
-    #[br(map = |x: u8| x != 0)]
-    #[binwrite(preprocessor(bool_to_u8))]
-    flip_x: bool,
-    #[br(map = |x: u8| x != 0)]
-    #[binwrite(preprocessor(bool_to_u8))]
-    flip_y: bool,
+pub struct Variable {
+    pub variable_id: i32,
+    pub name: MyString,
+    #[br(map = |x: i32| x.try_into().unwrap())]
+    pub static_type: StaticType,
+    pub initial_value: NovaValue,
 }
 
-#[derive(Debug, BinRead, BinWrite)]
-struct BrushGrid {
-    x: i32,
-    y: i32,
-}
-
-#[derive(Debug, BinRead, BinWrite)]
-struct Prefab {
-    prefab_id: i32,
-    prefab_image_data: Image,
-    items: MyVec<Object>,
-}
-
-#[derive(Debug, BinRead)]
-struct Image(MyVec<u8>);
-
-impl BinWrite for Image {
-    fn write_options<W: std::io::prelude::Write>(
-        &self,
-        writer: &mut W,
-        options: &binwrite::WriterOption,
-    ) -> std::io::Result<()> {
-        self.0.write_options(writer, options)
-    }
-}
-
-#[derive(Debug, BinRead, BinWrite)]
-struct Layer {
-    layer_id: i32,
-    layer_name: MyString,
-    #[br(map = |x: u8| x != 0)]
-    #[binwrite(preprocessor(bool_to_u8))]
-    selected: bool,
-    #[br(map = |x: u8| x != 0)]
-    #[binwrite(preprocessor(bool_to_u8))]
-    invisible: bool,
-    #[br(map = |x: u8| x != 0)]
-    #[binwrite(preprocessor(bool_to_u8))]
-    locked: bool,
-    foreground_type: i32,
-    parallax: Vec2,
-    #[br(map = |x: u8| x != 0)]
-    #[binwrite(preprocessor(bool_to_u8))]
-    fixed_size: bool,
-    children: MyVec<i32>,
-}
-
-#[derive(Debug, BinRead, BinWrite)]
-struct Object {
-    entity_id: i32,
-    tile_id: i32,
-    prefab_entity_id: i32,
-    prefab_id: i32,
-    position: Vec2,
-    scale: Vec2,
-    rotation: f32,
-    tag: MyString,
-    properties: MyVec<ObjectProperty>,
-    in_layer: i32,
-    in_group: i32,
-    group_members: MyVec<i32>,
-}
-
-#[derive(Debug)]
-enum ObjectProperty {
-    Colour(Colour),
-    Resolution(i32),
-    FillMode(i32),
-    SecondaryColour(Colour),
-    Thickness(f32),
-    TotalAngle(i32),
-    Corners(i32),
-    Blending(i32),
-    GridOffset(Vec2),
-    CornerRadius(f32),
-    Width(f32),
-    Height(f32),
-    BorderColour(Colour),
-    BorderThickness(f32),
-    PhysicsType(i32),
-    Friction(f32),
-    TerrainCorners(MyVec<MyVec<Vec2>>),
-    Direction(i32),
-    Impulse(i32),
-    Killer(bool),
-    RoundReflexAngles(bool),
-    RoundCollider(bool),
-    Radius(f32),
-    Size(f32),
-    ReverseDirection(bool),
-    CollisionDetector(bool),
-    Pattern(i32),
-    PatternTiling(Vec2),
-    PatternOffset(Vec2),
-    Sprite(String),
-    Trigger(bool),
-    Health(f32),
-    DamageFromJump(bool),
-    DamageFromDash(bool),
-    ReverseDirOnDamage(bool),
-    Floating(bool),
-    FlipX(bool),
-    FlipY(bool),
-    Text(String),
-    FontSize(f32),
-    EditorColour(Colour),
-}
-
-impl BinRead for ObjectProperty {
-    type Args = ();
-
-    fn read_options<R: Read + Seek>(
-        reader: &mut R,
-        _options: &ReadOptions,
-        _args: Self::Args,
-    ) -> BinResult<Self> {
-        match reader.read_le::<i32>()? {
-            0 => Ok(ObjectProperty::Colour(reader.read_le()?)),
-            1 => Ok(ObjectProperty::Resolution(reader.read_le()?)),
-            2 => Ok(ObjectProperty::FillMode(reader.read_le()?)),
-            3 => Ok(ObjectProperty::SecondaryColour(reader.read_le()?)),
-            4 => Ok(ObjectProperty::Thickness(reader.read_le()?)),
-            5 => Ok(ObjectProperty::TotalAngle(reader.read_le()?)),
-            6 => Ok(ObjectProperty::Corners(reader.read_le()?)),
-            7 => Ok(ObjectProperty::Blending(reader.read_le()?)),
-            8 => Ok(ObjectProperty::GridOffset(reader.read_le()?)),
-            9 => Ok(ObjectProperty::CornerRadius(reader.read_le()?)),
-            10 => Ok(ObjectProperty::Width(reader.read_le()?)),
-            11 => Ok(ObjectProperty::Height(reader.read_le()?)),
-            12 => Ok(ObjectProperty::BorderColour(reader.read_le()?)),
-            13 => Ok(ObjectProperty::BorderThickness(reader.read_le()?)),
-            14 => Ok(ObjectProperty::PhysicsType(reader.read_le()?)),
-            15 => Ok(ObjectProperty::Friction(reader.read_le()?)),
-            16 => Ok(ObjectProperty::TerrainCorners(
-                reader.read_le::<MyVec<MyVec<Vec2>>>()?,
-            )),
-            17 => Ok(ObjectProperty::Direction(reader.read_le()?)),
-            18 => Ok(ObjectProperty::Impulse(reader.read_le()?)),
-            19 => Ok(ObjectProperty::Killer(reader.read_le::<u8>()? != 0)),
-            20 => Ok(ObjectProperty::RoundReflexAngles(
-                reader.read_le::<u8>()? != 0,
-            )),
-            21 => Ok(ObjectProperty::RoundCollider(reader.read_le::<u8>()? != 0)),
-            22 => Ok(ObjectProperty::Radius(reader.read_le()?)),
-            23 => Ok(ObjectProperty::Size(reader.read_le()?)),
-            24 => Ok(ObjectProperty::ReverseDirection(
-                reader.read_le::<u8>()? != 0,
-            )),
-            25 => Ok(ObjectProperty::CollisionDetector(
-                reader.read_le::<u8>()? != 0,
-            )),
-            26 => Ok(ObjectProperty::Pattern(reader.read_le()?)),
-            27 => Ok(ObjectProperty::PatternTiling(reader.read_le()?)),
-            28 => Ok(ObjectProperty::PatternOffset(reader.read_le()?)),
-            35 => Ok(ObjectProperty::Sprite(reader.read_le::<MyString>()?.0)),
-            36 => Ok(ObjectProperty::Trigger(reader.read_le::<u8>()? != 0)),
-            37 => Ok(ObjectProperty::Health(reader.read_le()?)),
-            38 => Ok(ObjectProperty::DamageFromJump(reader.read_le::<u8>()? != 0)),
-            39 => Ok(ObjectProperty::DamageFromDash(reader.read_le::<u8>()? != 0)),
-            40 => Ok(ObjectProperty::ReverseDirOnDamage(
-                reader.read_le::<u8>()? != 0,
-            )),
-            41 => Ok(ObjectProperty::Floating(reader.read_le::<u8>()? != 0)),
-            43 => Ok(ObjectProperty::FlipX(reader.read_le::<u8>()? != 0)),
-            44 => Ok(ObjectProperty::FlipY(reader.read_le::<u8>()? != 0)),
-            45 => Ok(ObjectProperty::Text(reader.read_le::<MyString>()?.0)),
-            46 => Ok(ObjectProperty::FontSize(reader.read_le()?)),
-            47 => Ok(ObjectProperty::EditorColour(reader.read_le()?)),
-            other => unreachable!("Unknown property id: {}", other),
+macro_rules! define_static_type {
+    ($($name:ident = $number:expr),*) => {
+        #[derive(Debug)]
+        pub enum StaticType {
+            $($name = $number),*
         }
-    }
-}
 
-impl BinWrite for ObjectProperty {
-    fn write_options<W: std::io::prelude::Write>(
-        &self,
-        writer: &mut W,
-        options: &binwrite::WriterOption,
-    ) -> std::io::Result<()> {
-        match self {
-            ObjectProperty::Colour(colour) => {
-                writer.write_all(&0_i32.to_le_bytes())?;
-                colour.write_options(writer, options)?;
-            }
-            ObjectProperty::Resolution(resolution) => {
-                writer.write_all(&1_i32.to_le_bytes())?;
-                resolution.write_options(writer, options)?;
-            }
-            ObjectProperty::FillMode(fill_mode) => {
-                writer.write_all(&2_i32.to_le_bytes())?;
-                fill_mode.write_options(writer, options)?;
-            }
-            ObjectProperty::SecondaryColour(secondary_colour) => {
-                writer.write_all(&3_i32.to_le_bytes())?;
-                secondary_colour.write_options(writer, options)?;
-            }
-            ObjectProperty::Thickness(thickness) => {
-                writer.write_all(&4_i32.to_le_bytes())?;
-                thickness.write_options(writer, options)?;
-            }
-            ObjectProperty::TotalAngle(total_angle) => {
-                writer.write_all(&5_i32.to_le_bytes())?;
-                total_angle.write_options(writer, options)?;
-            }
-            ObjectProperty::Corners(corners) => {
-                writer.write_all(&6_i32.to_le_bytes())?;
-                corners.write_options(writer, options)?;
-            }
-            ObjectProperty::Blending(blending) => {
-                writer.write_all(&7_i32.to_le_bytes())?;
-                blending.write_options(writer, options)?;
-            }
-            ObjectProperty::GridOffset(grid_offset) => {
-                writer.write_all(&8_i32.to_le_bytes())?;
-                grid_offset.write_options(writer, options)?;
-            }
-            ObjectProperty::CornerRadius(corner_radius) => {
-                writer.write_all(&9_i32.to_le_bytes())?;
-                corner_radius.write_options(writer, options)?;
-            }
-            ObjectProperty::Width(width) => {
-                writer.write_all(&10_i32.to_le_bytes())?;
-                width.write_options(writer, options)?;
-            }
-            ObjectProperty::Height(height) => {
-                writer.write_all(&11_i32.to_le_bytes())?;
-                height.write_options(writer, options)?;
-            }
-            ObjectProperty::BorderColour(border_colour) => {
-                writer.write_all(&12_i32.to_le_bytes())?;
-                border_colour.write_options(writer, options)?;
-            }
-            ObjectProperty::BorderThickness(border_thickness) => {
-                writer.write_all(&13_i32.to_le_bytes())?;
-                border_thickness.write_options(writer, options)?;
-            }
-            ObjectProperty::PhysicsType(physics_type) => {
-                writer.write_all(&14_i32.to_le_bytes())?;
-                physics_type.write_options(writer, options)?;
-            }
-            ObjectProperty::Friction(friction) => {
-                writer.write_all(&15_i32.to_le_bytes())?;
-                friction.write_options(writer, options)?;
-            }
-            ObjectProperty::TerrainCorners(terrain_corners) => {
-                writer.write_all(&16_i32.to_le_bytes())?;
-                terrain_corners.write_options(writer, options)?;
-            }
-            ObjectProperty::Direction(direction) => {
-                writer.write_all(&17_i32.to_le_bytes())?;
-                direction.write_options(writer, options)?;
-            }
-            ObjectProperty::Impulse(impulse) => {
-                writer.write_all(&18_i32.to_le_bytes())?;
-                impulse.write_options(writer, options)?;
-            }
-            ObjectProperty::Killer(killer) => {
-                writer.write_all(&19_i32.to_le_bytes())?;
-                writer.write_all(&[bool_to_u8(killer)])?;
-            }
-            ObjectProperty::RoundReflexAngles(round_reflex_angles) => {
-                writer.write_all(&20_i32.to_le_bytes())?;
-                writer.write_all(&[bool_to_u8(round_reflex_angles)])?;
-            }
-            ObjectProperty::RoundCollider(round_collider) => {
-                writer.write_all(&21_i32.to_le_bytes())?;
-                writer.write_all(&[bool_to_u8(round_collider)])?;
-            }
-            ObjectProperty::Radius(radius) => {
-                writer.write_all(&22_i32.to_le_bytes())?;
-                radius.write_options(writer, options)?;
-            }
-            ObjectProperty::Size(size) => {
-                writer.write_all(&23_i32.to_le_bytes())?;
-                size.write_options(writer, options)?;
-            }
-            ObjectProperty::ReverseDirection(reverse_direction) => {
-                writer.write_all(&24_i32.to_le_bytes())?;
-                writer.write_all(&[bool_to_u8(reverse_direction)])?;
-            }
-            ObjectProperty::CollisionDetector(collision_detector) => {
-                writer.write_all(&25_i32.to_le_bytes())?;
-                writer.write_all(&[bool_to_u8(collision_detector)])?;
-            }
-            ObjectProperty::Pattern(pattern) => {
-                writer.write_all(&26_i32.to_le_bytes())?;
-                pattern.write_options(writer, options)?;
-            }
-            ObjectProperty::PatternTiling(pattern_tiling) => {
-                writer.write_all(&27_i32.to_le_bytes())?;
-                pattern_tiling.write_options(writer, options)?;
-            }
-            ObjectProperty::PatternOffset(pattern_offset) => {
-                writer.write_all(&28_i32.to_le_bytes())?;
-                pattern_offset.write_options(writer, options)?;
-            }
-            ObjectProperty::Sprite(sprite) => {
-                writer.write_all(&35_i32.to_le_bytes())?;
-                sprite.write_options(writer, options)?;
-            }
-            ObjectProperty::Trigger(trigger) => {
-                writer.write_all(&36_i32.to_le_bytes())?;
-                writer.write_all(&[bool_to_u8(trigger)])?;
-            }
-            ObjectProperty::Health(health) => {
-                writer.write_all(&37_i32.to_le_bytes())?;
-                health.write_options(writer, options)?;
-            }
-            ObjectProperty::DamageFromJump(damage_from_jump) => {
-                writer.write_all(&38_i32.to_le_bytes())?;
-                writer.write_all(&[bool_to_u8(damage_from_jump)])?;
-            }
-            ObjectProperty::DamageFromDash(damage_from_dash) => {
-                writer.write_all(&39_i32.to_le_bytes())?;
-                writer.write_all(&[bool_to_u8(damage_from_dash)])?;
-            }
-            ObjectProperty::ReverseDirOnDamage(reverse_dir_on_damage) => {
-                writer.write_all(&40_i32.to_le_bytes())?;
-                writer.write_all(&[bool_to_u8(reverse_dir_on_damage)])?;
-            }
-            ObjectProperty::Floating(floating) => {
-                writer.write_all(&41_i32.to_le_bytes())?;
-                writer.write_all(&[bool_to_u8(floating)])?;
-            }
-            ObjectProperty::FlipX(flip_x) => {
-                writer.write_all(&43_i32.to_le_bytes())?;
-                writer.write_all(&[bool_to_u8(flip_x)])?;
-            }
-            ObjectProperty::FlipY(flip_y) => {
-                writer.write_all(&44_i32.to_le_bytes())?;
-                writer.write_all(&[bool_to_u8(flip_y)])?;
-            }
-            ObjectProperty::Text(text) => {
-                writer.write_all(&45_i32.to_le_bytes())?;
-                text.write_options(writer, options)?;
-            }
-            ObjectProperty::FontSize(font_size) => {
-                writer.write_all(&46_i32.to_le_bytes())?;
-                font_size.write_options(writer, options)?;
-            }
-            ObjectProperty::EditorColour(editor_colour) => {
-                writer.write_all(&47_i32.to_le_bytes())?;
-                editor_colour.write_options(writer, options)?;
+        impl TryFrom<i32> for StaticType {
+            type Error = ();
+
+            fn try_from(value: i32) -> Result<Self, Self::Error> {
+                match value {
+                    $($number => Ok(StaticType::$name),)*
+                    _ => Err(())
+                }
             }
         }
 
-        Ok(())
-    }
-}
-
-#[derive(Debug, BinRead, BinWrite)]
-struct Vec2 {
-    x: f32,
-    y: f32,
-}
-
-#[derive(Debug, BinRead, BinWrite)]
-struct Colour {
-    r: f32,
-    g: f32,
-    b: f32,
-    a: f32,
-}
-
-#[derive(Debug, BinRead, BinWrite)]
-struct AuthorReplay {
-    replay_data: MyVec<u8>,
-}
-
-#[derive(Debug)]
-struct MyString(String);
-
-impl BinRead for MyString {
-    type Args = ();
-
-    fn read_options<R: Read + Seek>(
-        reader: &mut R,
-        options: &ReadOptions,
-        args: Self::Args,
-    ) -> BinResult<Self> {
-        let len = reader.read_le::<VarInt>()?;
-
-        let mut options = options.clone();
-        options.count = Some(len.inner as usize);
-
-        let buf = <Vec<char>>::read_options(reader, &options, args)?;
-
-        let string = buf.into_iter().collect::<String>();
-
-        Ok(MyString(string))
-    }
-}
-
-impl BinWrite for MyString {
-    fn write_options<W: std::io::prelude::Write>(
-        &self,
-        writer: &mut W,
-        options: &binwrite::WriterOption,
-    ) -> std::io::Result<()> {
-        let bytes = self.0.as_bytes();
-
-        VarInt {
-            inner: bytes.len() as i32,
+        impl From<&StaticType> for i32 {
+            fn from(value: &StaticType) -> Self {
+                match value {
+                    $(StaticType::$name => $number,)*
+                }
+            }
         }
-        .write_options(writer, options)?;
-
-        writer.write_all(bytes)?;
-
-        Ok(())
-    }
+    };
 }
 
-#[derive(Debug)]
-struct MyVec<T>(Vec<T>);
+define_static_type!(
+    Bool = 0,
+    Int = 1,
+    Float = 2,
+    String = 3,
+    Color = 4,
+    Vector = 5,
+    Sound = 6,
+    Music = 7,
+    Object = 8,
+    ObjectSet = 9,
+    Transition = 10,
+    Easing = 11,
+    Sprite = 12,
+    Script = 13,
+    Layer = 14
+);
 
-impl<T: BinRead<Args = ()>> BinRead for MyVec<T> {
-    type Args = ();
-
-    fn read_options<R: Read + Seek>(
-        reader: &mut R,
-        options: &ReadOptions,
-        args: Self::Args,
-    ) -> BinResult<Self> {
-        let len = reader.read_le::<i32>()?;
-
-        let mut options = options.clone();
-        options.count = Some(len as usize);
-
-        let buf = <Vec<T>>::read_options(reader, &options, args)?;
-
-        Ok(MyVec(buf))
-    }
-}
-
-impl<T: BinWrite> BinWrite for MyVec<T> {
-    fn write_options<W: std::io::prelude::Write>(
-        &self,
-        writer: &mut W,
-        options: &binwrite::WriterOption,
-    ) -> std::io::Result<()> {
-        writer.write_all(&(self.0.len() as i32).to_le_bytes())?;
-
-        self.0.write_options(writer, options)
-    }
-}
-
-#[derive(Debug, BinRead)]
-struct VarInt {
-    #[br(parse_with = parse_var_int)]
-    inner: i32,
-}
-
-fn parse_var_int<R: Read + Seek>(
-    reader: &mut R,
-    _options: &ReadOptions,
-    _args: (),
-) -> BinResult<i32> {
-    const SEGMENT_BITS: u8 = 0x7F;
-    const CONTINUE_BIT: u8 = 0x80;
-
-    let mut value = 0;
-    let mut position = 0;
-
-    loop {
-        let current_byte = reader.read_le::<u8>()?;
-
-        value |= ((current_byte & SEGMENT_BITS) << position) as i32;
-
-        if current_byte & CONTINUE_BIT == 0 {
-            break;
-        }
-
-        position += 7;
-    }
-
-    Ok(value)
-}
-
-impl BinWrite for VarInt {
+impl BinWrite for StaticType {
     fn write_options<W: std::io::prelude::Write>(
         &self,
         writer: &mut W,
         _options: &binwrite::WriterOption,
     ) -> std::io::Result<()> {
-        let mut value = self.inner;
-
-        loop {
-            let mut current_byte = (value & 0x7F) as u8;
-            value >>= 7;
-
-            if value != 0 {
-                current_byte |= 0x80;
-            }
-
-            writer.write_all(&[current_byte])?;
-
-            if value == 0 {
-                break;
-            }
-        }
-
-        Ok(())
+        writer.write_all(&Into::<i32>::into(self).to_le_bytes())
     }
 }
 
-fn bool_to_u8(value: &bool) -> u8 {
-    if *value {
-        1
-    } else {
-        0
-    }
+#[derive(Debug, BinRead, BinWrite)]
+pub struct Activator {
+    pub activator_type: i32,
+    pub parameters: MyVec<NovaValue>,
+}
+
+#[derive(Debug, BinRead, BinWrite)]
+pub struct Parameter {
+    pub parameter_id: i32,
+    pub name: MyString,
+    #[br(map = |x: i32| x.try_into().unwrap())]
+    pub static_type: StaticType,
+    pub default_value: NovaValue,
 }
