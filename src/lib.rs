@@ -12,7 +12,7 @@ pub fn read<R: BinReaderExt>(reader: &mut R) -> BinResult<Exolvl> {
     reader.read_le()
 }
 
-pub fn write<P: AsRef<std::path::Path>>(exolvl: &Exolvl) -> io::Result<Vec<u8>> {
+pub fn write(exolvl: &Exolvl) -> io::Result<Vec<u8>> {
     let mut buf = vec![];
 
     exolvl.write(&mut buf)?;
