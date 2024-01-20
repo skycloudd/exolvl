@@ -8,18 +8,16 @@ pub mod scripts;
 
 pub const SERIALIZATION_VERSION: i32 = 16;
 
-pub fn read<P: AsRef<std::path::Path>>(path: P) -> Result<Exolvl, Box<dyn std::error::Error>> {
-    let mut file_reader = std::fs::File::open(path)?;
-
-    Ok(file_reader.read_le()?)
+pub fn read<R: BinReaderExt>(reader: &mut R) -> BinResult<Exolvl> {
+    reader.read_le()
 }
 
-pub fn write<P: AsRef<std::path::Path>>(exolvl: &Exolvl, path: P) -> io::Result<()> {
+pub fn write<P: AsRef<std::path::Path>>(exolvl: &Exolvl) -> io::Result<Vec<u8>> {
     let mut buf = vec![];
 
     exolvl.write(&mut buf)?;
 
-    std::fs::write(path, buf)
+    Ok(buf)
 }
 
 #[derive(Debug, BinRead)]
