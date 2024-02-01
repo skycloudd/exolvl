@@ -6,8 +6,6 @@ pub mod brush;
 pub mod object;
 pub mod scripts;
 
-pub const SERIALIZATION_VERSION: i32 = 16;
-
 pub fn read<R: BinReaderExt>(reader: &mut R) -> BinResult<Exolvl> {
     reader.read_le()
 }
@@ -47,7 +45,7 @@ impl BinWrite for Exolvl {
 }
 
 #[derive(Debug, BinRead, BinWrite)]
-#[br(assert(serialization_version == SERIALIZATION_VERSION, "incorrect serialization version, must be 16"))]
+#[br(assert(serialization_version >= 16, "incorrect serialization version, must be at least 16"))]
 pub struct LocalLevel {
     pub serialization_version: i32,
     pub level_id: MyString,
@@ -127,6 +125,7 @@ pub struct LevelData {
     pub prefabs: MyVec<Prefab>,
     pub brushes: MyVec<brush::Brush>,
     pub patterns: MyVec<Pattern>,
+    pub colour_palette: MyVec<Colour>,
     pub author_time: i64,
     pub author_lap_times: MyVec<i64>,
     pub silver_medal_time: i64,
