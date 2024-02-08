@@ -108,7 +108,7 @@ impl<T: Read + Copy + Default, const LEN: usize> Read for [T; LEN] {
 
 impl<T: Read> Read for Option<T> {
     fn read(input: &mut impl Iterator<Item = u8>) -> Self {
-        if Read::read(input) {
+        if bool::read(input) {
             Some(Read::read(input))
         } else {
             None
@@ -176,37 +176,21 @@ pub struct LocalLevel {
 
 impl Read for LocalLevel {
     fn read(input: &mut impl Iterator<Item = u8>) -> Self {
-        let serialization_version = Read::read(input);
-        let level_id = Read::read(input);
-        let level_version = Read::read(input);
-        let level_name = Read::read(input);
-        let thumbnail = Read::read(input);
-        let creation_date = Read::read(input);
-        let update_date = Read::read(input);
-        let author_time = Read::read(input);
-        let author_lap_times = Read::read(input);
-        let silver_medal_time = Read::read(input);
-        let gold_medal_time = Read::read(input);
-        let laps = Read::read(input);
-        let private = Read::read(input);
-
-        let unknown_1 = Read::read(input);
-
         Self {
-            serialization_version,
-            level_id,
-            level_version,
-            level_name,
-            thumbnail,
-            creation_date,
-            update_date,
-            author_time,
-            author_lap_times,
-            silver_medal_time,
-            gold_medal_time,
-            laps,
-            private,
-            unknown_1,
+            serialization_version: Read::read(input),
+            level_id: Read::read(input),
+            level_version: Read::read(input),
+            level_name: Read::read(input),
+            thumbnail: Read::read(input),
+            creation_date: Read::read(input),
+            update_date: Read::read(input),
+            author_time: Read::read(input),
+            author_lap_times: Read::read(input),
+            silver_medal_time: Read::read(input),
+            gold_medal_time: Read::read(input),
+            laps: Read::read(input),
+            private: Read::read(input),
+            unknown_1: Read::read(input),
         }
     }
 }
@@ -288,94 +272,47 @@ pub struct LevelData {
 
 impl ReadVersioned for LevelData {
     fn read(input: &mut impl Iterator<Item = u8>, version: i32) -> Self {
-        let level_id = Read::read(input);
-        let level_version = Read::read(input);
-        let nova_level = Read::read(input);
-        let under_decoration_tiles = Read::read(input);
-        let background_decoration_tiles_2 = Read::read(input);
-        let terrain_tiles = Read::read(input);
-        let floating_zone_tiles = Read::read(input);
-        let object_tiles = Read::read(input);
-        let foreground_decoration_tiles = Read::read(input);
-        let objects = Read::read(input);
-        let layers = Read::read(input);
-        let prefabs = Read::read(input);
-        let brushes = Read::read(input);
-        let patterns = Read::read(input);
-        let colour_palette = (version >= 17).then(|| Read::read(input));
-        let author_time = Read::read(input);
-        let author_lap_times = Read::read(input);
-        let silver_medal_time = Read::read(input);
-        let gold_medal_time = Read::read(input);
-        let laps = Read::read(input);
-        let center_camera = Read::read(input);
-        let scripts = Read::read(input);
-        let nova_scripts = Read::read(input);
-        let global_variables = Read::read(input);
-        let theme = Read::read(input);
-        let custom_background_colour = Read::read(input);
-
-        let _unknown1 = Read::read(input);
-
-        let custom_terrain_colour = Read::read(input);
-
-        let _unknown_2 = Read::read(input);
-
-        let custom_terrain_border_colour = Read::read(input);
-        let custom_terrain_border_thickness = Read::read(input);
-        let custom_terrain_border_corner_radius = Read::read(input);
-
-        let _unknown_3 = Read::read(input);
-
-        let default_music = Read::read(input);
-        let music_ids = Read::read(input);
-        let allow_direction_change = Read::read(input);
-        let disable_replays = Read::read(input);
-        let disable_revive_pads = Read::read(input);
-        let disable_start_animation = Read::read(input);
-        let gravity = Read::read(input);
-
         Self {
-            level_id,
-            level_version,
-            nova_level,
-            under_decoration_tiles,
-            background_decoration_tiles_2,
-            terrain_tiles,
-            floating_zone_tiles,
-            object_tiles,
-            foreground_decoration_tiles,
-            objects,
-            layers,
-            prefabs,
-            brushes,
-            patterns,
-            colour_palette,
-            author_time,
-            author_lap_times,
-            silver_medal_time,
-            gold_medal_time,
-            laps,
-            center_camera,
-            scripts,
-            nova_scripts,
-            global_variables,
-            theme,
-            custom_background_colour,
-            _unknown1,
-            custom_terrain_colour,
-            _unknown_2,
-            custom_terrain_border_colour,
-            custom_terrain_border_thickness,
-            custom_terrain_border_corner_radius,
-            _unknown_3,
-            default_music,
-            music_ids,
-            allow_direction_change,
-            disable_replays,
-            disable_revive_pads,
-            disable_start_animation,
-            gravity,
+            level_id: Read::read(input),
+            level_version: Read::read(input),
+            nova_level: Read::read(input),
+            under_decoration_tiles: Read::read(input),
+            background_decoration_tiles_2: Read::read(input),
+            terrain_tiles: Read::read(input),
+            floating_zone_tiles: Read::read(input),
+            object_tiles: Read::read(input),
+            foreground_decoration_tiles: Read::read(input),
+            objects: Read::read(input),
+            layers: Read::read(input),
+            prefabs: Read::read(input),
+            brushes: Read::read(input),
+            patterns: Read::read(input),
+            colour_palette: (version >= 17).then(|| Read::read(input)),
+            author_time: Read::read(input),
+            author_lap_times: Read::read(input),
+            silver_medal_time: Read::read(input),
+            gold_medal_time: Read::read(input),
+            laps: Read::read(input),
+            center_camera: Read::read(input),
+            scripts: Read::read(input),
+            nova_scripts: Read::read(input),
+            global_variables: Read::read(input),
+            theme: Read::read(input),
+            custom_background_colour: Read::read(input),
+            _unknown1: Read::read(input),
+            custom_terrain_colour: Read::read(input),
+            _unknown_2: Read::read(input),
+            custom_terrain_border_colour: Read::read(input),
+            custom_terrain_border_thickness: Read::read(input),
+            custom_terrain_border_corner_radius: Read::read(input),
+            _unknown_3: Read::read(input),
+            default_music: Read::read(input),
+            music_ids: Read::read(input),
+            allow_direction_change: Read::read(input),
+            disable_replays: Read::read(input),
+            disable_revive_pads: Read::read(input),
+            disable_start_animation: Read::read(input),
+            gravity: Read::read(input),
         }
     }
 }
@@ -388,12 +325,9 @@ pub struct Pattern {
 
 impl Read for Pattern {
     fn read(input: &mut impl Iterator<Item = u8>) -> Self {
-        let pattern_id = Read::read(input);
-        let pattern_frames = Read::read(input);
-
         Self {
-            pattern_id,
-            pattern_frames,
+            pattern_id: Read::read(input),
+            pattern_frames: Read::read(input),
         }
     }
 }
@@ -407,14 +341,10 @@ pub struct Prefab {
 
 impl Read for Prefab {
     fn read(input: &mut impl Iterator<Item = u8>) -> Self {
-        let prefab_id = Read::read(input);
-        let prefab_image_data = Read::read(input);
-        let items = Read::read(input);
-
         Self {
-            prefab_id,
-            prefab_image_data,
-            items,
+            prefab_id: Read::read(input),
+            prefab_image_data: Read::read(input),
+            items: Read::read(input),
         }
     }
 }
@@ -445,26 +375,16 @@ pub struct Layer {
 
 impl Read for Layer {
     fn read(input: &mut impl Iterator<Item = u8>) -> Self {
-        let layer_id = Read::read(input);
-        let layer_name = Read::read(input);
-        let selected = Read::read(input);
-        let invisible = Read::read(input);
-        let locked = Read::read(input);
-        let foreground_type = Read::read(input);
-        let parallax = Read::read(input);
-        let fixed_size = Read::read(input);
-        let children = Read::read(input);
-
         Self {
-            layer_id,
-            layer_name,
-            selected,
-            invisible,
-            locked,
-            foreground_type,
-            parallax,
-            fixed_size,
-            children,
+            layer_id: Read::read(input),
+            layer_name: Read::read(input),
+            selected: Read::read(input),
+            invisible: Read::read(input),
+            locked: Read::read(input),
+            foreground_type: Read::read(input),
+            parallax: Read::read(input),
+            fixed_size: Read::read(input),
+            children: Read::read(input),
         }
     }
 }
@@ -477,10 +397,10 @@ pub struct Vec2 {
 
 impl Read for Vec2 {
     fn read(input: &mut impl Iterator<Item = u8>) -> Self {
-        let x = Read::read(input);
-        let y = Read::read(input);
-
-        Self { x, y }
+        Self {
+            x: Read::read(input),
+            y: Read::read(input),
+        }
     }
 }
 
@@ -494,12 +414,12 @@ pub struct Colour {
 
 impl Read for Colour {
     fn read(input: &mut impl Iterator<Item = u8>) -> Self {
-        let r = Read::read(input);
-        let g = Read::read(input);
-        let b = Read::read(input);
-        let a = Read::read(input);
-
-        Self { r, g, b, a }
+        Self {
+            r: Read::read(input),
+            g: Read::read(input),
+            b: Read::read(input),
+            a: Read::read(input),
+        }
     }
 }
 
@@ -510,9 +430,9 @@ pub struct AuthorReplay {
 
 impl Read for AuthorReplay {
     fn read(input: &mut impl Iterator<Item = u8>) -> Self {
-        let replay_data = Read::read(input);
-
-        Self { replay_data }
+        Self {
+            replay_data: Read::read(input),
+        }
     }
 }
 
@@ -534,32 +454,19 @@ pub struct Object {
 
 impl Read for Object {
     fn read(input: &mut impl Iterator<Item = u8>) -> Self {
-        let entity_id = Read::read(input);
-        let tile_id = Read::read(input);
-        let prefab_entity_id = Read::read(input);
-        let prefab_id = Read::read(input);
-        let position = Read::read(input);
-        let scale = Read::read(input);
-        let rotation = Read::read(input);
-        let tag = Read::read(input);
-        let properties = Read::read(input);
-        let in_layer = Read::read(input);
-        let in_group = Read::read(input);
-        let group_members = Read::read(input);
-
         Self {
-            entity_id,
-            tile_id,
-            prefab_entity_id,
-            prefab_id,
-            position,
-            scale,
-            rotation,
-            tag,
-            properties,
-            in_layer,
-            in_group,
-            group_members,
+            entity_id: Read::read(input),
+            tile_id: Read::read(input),
+            prefab_entity_id: Read::read(input),
+            prefab_id: Read::read(input),
+            position: Read::read(input),
+            scale: Read::read(input),
+            rotation: Read::read(input),
+            tag: Read::read(input),
+            properties: Read::read(input),
+            in_layer: Read::read(input),
+            in_group: Read::read(input),
+            group_members: Read::read(input),
         }
     }
 }
@@ -675,18 +582,12 @@ pub struct Brush {
 
 impl Read for Brush {
     fn read(input: &mut impl Iterator<Item = u8>) -> Self {
-        let brush_id = Read::read(input);
-        let spread = Read::read(input);
-        let frequency = Read::read(input);
-        let grid = Read::read(input);
-        let objects = Read::read(input);
-
         Self {
-            brush_id,
-            spread,
-            frequency,
-            grid,
-            objects,
+            brush_id: Read::read(input),
+            spread: Read::read(input),
+            frequency: Read::read(input),
+            grid: Read::read(input),
+            objects: Read::read(input),
         }
     }
 }
@@ -704,22 +605,14 @@ pub struct BrushObject {
 
 impl Read for BrushObject {
     fn read(input: &mut impl Iterator<Item = u8>) -> Self {
-        let entity_id = Read::read(input);
-        let properties = Read::read(input);
-        let weight = Read::read(input);
-        let scale = Read::read(input);
-        let rotation = Read::read(input);
-        let flip_x = Read::read(input);
-        let flip_y = Read::read(input);
-
         Self {
-            entity_id,
-            properties,
-            weight,
-            scale,
-            rotation,
-            flip_x,
-            flip_y,
+            entity_id: Read::read(input),
+            properties: Read::read(input),
+            weight: Read::read(input),
+            scale: Read::read(input),
+            rotation: Read::read(input),
+            flip_x: Read::read(input),
+            flip_y: Read::read(input),
         }
     }
 }
@@ -732,10 +625,10 @@ pub struct BrushGrid {
 
 impl Read for BrushGrid {
     fn read(input: &mut impl Iterator<Item = u8>) -> Self {
-        let x = Read::read(input);
-        let y = Read::read(input);
-
-        Self { x, y }
+        Self {
+            x: Read::read(input),
+            y: Read::read(input),
+        }
     }
 }
 
@@ -754,48 +647,35 @@ pub struct NovaScript {
 
 impl Read for NovaScript {
     fn read(input: &mut impl Iterator<Item = u8>) -> Self {
-        let script_id = Read::read(input);
-        let script_name = Read::read(input);
-        let is_function = Read::read(input);
-        let activation_count = Read::read(input);
-        let condition = Read::read(input);
-        let activation_list = Read::read(input);
-        let parameters = Read::read(input);
-        let variables = Read::read(input);
-        let actions = Read::read(input);
-
         Self {
-            script_id,
-            script_name,
-            is_function,
-            activation_count,
-            condition,
-            activation_list,
-            parameters,
-            variables,
-            actions,
+            script_id: Read::read(input),
+            script_name: Read::read(input),
+            is_function: Read::read(input),
+            activation_count: Read::read(input),
+            condition: Read::read(input),
+            activation_list: Read::read(input),
+            parameters: Read::read(input),
+            variables: Read::read(input),
+            actions: Read::read(input),
         }
     }
 }
 
 #[derive(Debug)]
 pub struct Action {
-    pub action_type: ActionType,
     pub closed: bool,
     pub wait: bool,
+    pub action_type: ActionType,
 }
 
 impl Read for Action {
     fn read(input: &mut impl Iterator<Item = u8>) -> Self {
         let action_type = Read::read(input);
-        let closed = Read::read(input);
-        let wait = Read::read(input);
-        let action_type = ReadWith::read_with(input, action_type);
 
         Self {
-            action_type,
-            closed,
-            wait,
+            closed: Read::read(input),
+            wait: Read::read(input),
+            action_type: ReadWith::read_with(input, action_type),
         }
     }
 }
@@ -1035,462 +915,232 @@ impl ReadWith for ActionType {
 
     fn read_with(input: &mut impl Iterator<Item = u8>, with: Self::With) -> Self {
         match with {
-            0 => {
-                let actions = Read::read(input);
-                let count = Read::read(input);
-
-                ActionType::Repeat { actions, count }
-            }
-            1 => {
-                let actions = Read::read(input);
-                let condition = Read::read(input);
-
-                ActionType::RepeatWhile { actions, condition }
-            }
-            2 => {
-                let if_actions = Read::read(input);
-                let else_actions = Read::read(input);
-                let condition = Read::read(input);
-
-                ActionType::ConditionBlock {
-                    if_actions,
-                    else_actions,
-                    condition,
-                }
-            }
-            3 => {
-                let duration = Read::read(input);
-
-                ActionType::Wait { duration }
-            }
-            4 => {
-                let frames = Read::read(input);
-
-                ActionType::WaitFrames { frames }
-            }
-            5 => {
-                let target_objects = Read::read(input);
-                let position = Read::read(input);
-                let global = Read::read(input);
-                let duration = Read::read(input);
-                let easing = Read::read(input);
-
-                ActionType::Move {
-                    target_objects,
-                    position,
-                    global,
-                    duration,
-                    easing,
-                }
-            }
-            6 => {
-                let target_objects = Read::read(input);
-                let scale = Read::read(input);
-                let duration = Read::read(input);
-                let easing = Read::read(input);
-
-                ActionType::Scale {
-                    target_objects,
-                    scale,
-                    duration,
-                    easing,
-                }
-            }
-            7 => {
-                let target_objects = Read::read(input);
-                let rotation = Read::read(input);
-                let shortest_path = Read::read(input);
-                let global = Read::read(input);
-                let duration = Read::read(input);
-                let easing = Read::read(input);
-
-                ActionType::Rotate {
-                    target_objects,
-                    rotation,
-                    shortest_path,
-                    global,
-                    duration,
-                    easing,
-                }
-            }
-            8 => {
-                let target_objects = Read::read(input);
-                let pivot = Read::read(input);
-                let rotation = Read::read(input);
-                let rotate_target = Read::read(input);
-                let duration = Read::read(input);
-                let easing = Read::read(input);
-
-                ActionType::RotateAround {
-                    target_objects,
-                    pivot,
-                    rotation,
-                    rotate_target,
-                    duration,
-                    easing,
-                }
-            }
-            9 => {
-                let variable = Read::read(input);
-                let value = Read::read(input);
-
-                ActionType::SetVariable { variable, value }
-            }
-            10 => {
-                let variable = Read::read(input);
-
-                ActionType::ResetVariable { variable }
-            }
-            11 => {
-                let target_objects = Read::read(input);
-
-                ActionType::ResetObject { target_objects }
-            }
-            12 => {
-                let target_objects = Read::read(input);
-                let color = Read::read(input);
-                let channel = Read::read(input);
-                let duration = Read::read(input);
-                let easing = Read::read(input);
-
-                ActionType::SetColor {
-                    target_objects,
-                    color,
-                    channel,
-                    duration,
-                    easing,
-                }
-            }
-            13 => {
-                let target_objects = Read::read(input);
-                let transparency = Read::read(input);
-                let channel = Read::read(input);
-                let duration = Read::read(input);
-                let easing = Read::read(input);
-
-                ActionType::SetTransparency {
-                    target_objects,
-                    transparency,
-                    channel,
-                    duration,
-                    easing,
-                }
-            }
-            14 => {
-                let target_objects = Read::read(input);
-                let color = Read::read(input);
-                let duration = Read::read(input);
-                let easing = Read::read(input);
-
-                ActionType::SetSecondaryColor {
-                    target_objects,
-                    color,
-                    duration,
-                    easing,
-                }
-            }
-            15 => {
-                let target_objects = Read::read(input);
-                let transparency = Read::read(input);
-                let duration = Read::read(input);
-                let easing = Read::read(input);
-
-                ActionType::SetSecondaryTransparency {
-                    target_objects,
-                    transparency,
-                    duration,
-                    easing,
-                }
-            }
-            16 => {
-                let target_objects = Read::read(input);
-                let color = Read::read(input);
-                let duration = Read::read(input);
-                let easing = Read::read(input);
-
-                ActionType::SetBorderColor {
-                    target_objects,
-                    color,
-                    duration,
-                    easing,
-                }
-            }
-            17 => {
-                let target_objects = Read::read(input);
-                let transparency = Read::read(input);
-                let duration = Read::read(input);
-                let easing = Read::read(input);
-
-                ActionType::SetBorderTransparency {
-                    target_objects,
-                    transparency,
-                    duration,
-                    easing,
-                }
-            }
-            18 => {
-                let target_objects = Read::read(input);
-                let sprite = Read::read(input);
-
-                ActionType::SetSprite {
-                    target_objects,
-                    sprite,
-                }
-            }
-            19 => {
-                let target_objects = Read::read(input);
-                let text = Read::read(input);
-
-                ActionType::SetText {
-                    target_objects,
-                    text,
-                }
-            }
-            20 => {
-                let target_objects = Read::read(input);
-                let enabled = Read::read(input);
-
-                ActionType::SetEnabled {
-                    target_objects,
-                    enabled,
-                }
-            }
-            21 => {
-                let target_objects = Read::read(input);
-
-                ActionType::Activate { target_objects }
-            }
-            22 => {
-                let target_objects = Read::read(input);
-
-                ActionType::Deactivate { target_objects }
-            }
-            23 => {
-                let target_objects = Read::read(input);
-                let damage = Read::read(input);
-
-                ActionType::Damage {
-                    target_objects,
-                    damage,
-                }
-            }
-            24 => {
-                let target_objects = Read::read(input);
-
-                ActionType::Kill { target_objects }
-            }
+            0 => ActionType::Repeat {
+                actions: Read::read(input),
+                count: Read::read(input),
+            },
+            1 => ActionType::RepeatWhile {
+                actions: Read::read(input),
+                condition: Read::read(input),
+            },
+            2 => ActionType::ConditionBlock {
+                if_actions: Read::read(input),
+                else_actions: Read::read(input),
+                condition: Read::read(input),
+            },
+            3 => ActionType::Wait {
+                duration: Read::read(input),
+            },
+            4 => ActionType::WaitFrames {
+                frames: Read::read(input),
+            },
+            5 => ActionType::Move {
+                target_objects: Read::read(input),
+                position: Read::read(input),
+                global: Read::read(input),
+                duration: Read::read(input),
+                easing: Read::read(input),
+            },
+            6 => ActionType::Scale {
+                target_objects: Read::read(input),
+                scale: Read::read(input),
+                duration: Read::read(input),
+                easing: Read::read(input),
+            },
+            7 => ActionType::Rotate {
+                target_objects: Read::read(input),
+                rotation: Read::read(input),
+                shortest_path: Read::read(input),
+                global: Read::read(input),
+                duration: Read::read(input),
+                easing: Read::read(input),
+            },
+            8 => ActionType::RotateAround {
+                target_objects: Read::read(input),
+                pivot: Read::read(input),
+                rotation: Read::read(input),
+                rotate_target: Read::read(input),
+                duration: Read::read(input),
+                easing: Read::read(input),
+            },
+            9 => ActionType::SetVariable {
+                variable: Read::read(input),
+                value: Read::read(input),
+            },
+            10 => ActionType::ResetVariable {
+                variable: Read::read(input),
+            },
+            11 => ActionType::ResetObject {
+                target_objects: Read::read(input),
+            },
+            12 => ActionType::SetColor {
+                target_objects: Read::read(input),
+                color: Read::read(input),
+                channel: Read::read(input),
+                duration: Read::read(input),
+                easing: Read::read(input),
+            },
+            13 => ActionType::SetTransparency {
+                target_objects: Read::read(input),
+                transparency: Read::read(input),
+                channel: Read::read(input),
+                duration: Read::read(input),
+                easing: Read::read(input),
+            },
+            14 => ActionType::SetSecondaryColor {
+                target_objects: Read::read(input),
+                color: Read::read(input),
+                duration: Read::read(input),
+                easing: Read::read(input),
+            },
+            15 => ActionType::SetSecondaryTransparency {
+                target_objects: Read::read(input),
+                transparency: Read::read(input),
+                duration: Read::read(input),
+                easing: Read::read(input),
+            },
+            16 => ActionType::SetBorderColor {
+                target_objects: Read::read(input),
+                color: Read::read(input),
+                duration: Read::read(input),
+                easing: Read::read(input),
+            },
+            17 => ActionType::SetBorderTransparency {
+                target_objects: Read::read(input),
+                transparency: Read::read(input),
+                duration: Read::read(input),
+                easing: Read::read(input),
+            },
+            18 => ActionType::SetSprite {
+                target_objects: Read::read(input),
+                sprite: Read::read(input),
+            },
+            19 => ActionType::SetText {
+                target_objects: Read::read(input),
+                text: Read::read(input),
+            },
+            20 => ActionType::SetEnabled {
+                target_objects: Read::read(input),
+                enabled: Read::read(input),
+            },
+            21 => ActionType::Activate {
+                target_objects: Read::read(input),
+            },
+            22 => ActionType::Deactivate {
+                target_objects: Read::read(input),
+            },
+            23 => ActionType::Damage {
+                target_objects: Read::read(input),
+                damage: Read::read(input),
+            },
+            24 => ActionType::Kill {
+                target_objects: Read::read(input),
+            },
             25 => ActionType::GameFinish,
-            26 => {
-                let position = Read::read(input);
-                let duration = Read::read(input);
-                let easing = Read::read(input);
-
-                ActionType::CameraPan {
-                    position,
-                    duration,
-                    easing,
-                }
-            }
+            26 => ActionType::CameraPan {
+                position: Read::read(input),
+                duration: Read::read(input),
+                easing: Read::read(input),
+            },
             27 => ActionType::CameraFollowPlayer,
-            28 => {
-                let viewport_size = Read::read(input);
-                let duration = Read::read(input);
-                let easing = Read::read(input);
-
-                ActionType::CameraZoom {
-                    viewport_size,
-                    duration,
-                    easing,
-                }
-            }
-            29 => {
-                let duration = Read::read(input);
-                let easing = Read::read(input);
-
-                ActionType::CameraZoomReset { duration, easing }
-            }
-            30 => {
-                let offset = Read::read(input);
-                let duration = Read::read(input);
-                let easing = Read::read(input);
-
-                ActionType::CameraOffset {
-                    offset,
-                    duration,
-                    easing,
-                }
-            }
-            31 => {
-                let duration = Read::read(input);
-                let easing = Read::read(input);
-
-                ActionType::CameraOffsetReset { duration, easing }
-            }
-            32 => {
-                let strength = Read::read(input);
-                let roughness = Read::read(input);
-                let fade_in = Read::read(input);
-                let fade_out = Read::read(input);
-                let duration = Read::read(input);
-
-                ActionType::CameraShake {
-                    strength,
-                    roughness,
-                    fade_in,
-                    fade_out,
-                    duration,
-                }
-            }
-            33 => {
-                let sound = Read::read(input);
-                let volume = Read::read(input);
-                let pitch = Read::read(input);
-
-                ActionType::PlaySound {
-                    sound,
-                    volume,
-                    pitch,
-                }
-            }
-            34 => {
-                let music = Read::read(input);
-                let volume = Read::read(input);
-                let pitch = Read::read(input);
-
-                ActionType::PlayMusic {
-                    music,
-                    volume,
-                    pitch,
-                }
-            }
-            35 => {
-                let target_objects = Read::read(input);
-                let direction = Read::read(input);
-
-                ActionType::SetDirection {
-                    target_objects,
-                    direction,
-                }
-            }
-            36 => {
-                let target_objects = Read::read(input);
-                let gravity = Read::read(input);
-
-                ActionType::SetGravity {
-                    target_objects,
-                    gravity,
-                }
-            }
-            37 => {
-                let target_objects = Read::read(input);
-                let velocity = Read::read(input);
-
-                ActionType::SetVelocity {
-                    target_objects,
-                    velocity,
-                }
-            }
-            38 => {
-                let enabled = Read::read(input);
-
-                ActionType::SetCinematic { enabled }
-            }
-            39 => {
-                let enabled = Read::read(input);
-
-                ActionType::SetInputEnabled { enabled }
-            }
-            40 => {
-                let enabled = Read::read(input);
-
-                ActionType::SetTimerEnabled { enabled }
-            }
-            41 => {
-                let text = Read::read(input);
-                let duration = Read::read(input);
-
-                ActionType::GameTextShow { text, duration }
-            }
-            42 => {
-                let text = Read::read(input);
-                let position = Read::read(input);
-                let reverse_direction = Read::read(input);
-
-                ActionType::DialogueShow {
-                    text,
-                    position,
-                    reverse_direction,
-                }
-            }
-            43 => {
-                let script = Read::read(input);
-
-                ActionType::StopScript { script }
-            }
-            44 => {
-                let type_ = Read::read(input);
-                let color = Read::read(input);
-                let duration = Read::read(input);
-                let easing = Read::read(input);
-
-                ActionType::TransitionIn {
-                    type_,
-                    color,
-                    duration,
-                    easing,
-                }
-            }
-            45 => {
-                let type_ = Read::read(input);
-                let color = Read::read(input);
-                let duration = Read::read(input);
-                let easing = Read::read(input);
-
-                ActionType::TransitionOut {
-                    type_,
-                    color,
-                    duration,
-                    easing,
-                }
-            }
-            46 => {
-                let time_scale = Read::read(input);
-                let duration = Read::read(input);
-                let easing = Read::read(input);
-
-                ActionType::TimeScale {
-                    time_scale,
-                    duration,
-                    easing,
-                }
-            }
-            47 => {
-                let function = Read::read(input);
-
-                ActionType::RunFunction { function }
-            }
-            48 => {
-                let variable = Read::read(input);
-                let value = Read::read(input);
-                let duration = Read::read(input);
-                let easing = Read::read(input);
-
-                ActionType::SetVariableOverTime {
-                    variable,
-                    value,
-                    duration,
-                    easing,
-                }
-            }
-            49 => {
-                let target_objects = Read::read(input);
-                let actions = Read::read(input);
-
-                ActionType::RepeatForEachObject {
-                    target_objects,
-                    actions,
-                }
-            }
+            28 => ActionType::CameraZoom {
+                viewport_size: Read::read(input),
+                duration: Read::read(input),
+                easing: Read::read(input),
+            },
+            29 => ActionType::CameraZoomReset {
+                duration: Read::read(input),
+                easing: Read::read(input),
+            },
+            30 => ActionType::CameraOffset {
+                offset: Read::read(input),
+                duration: Read::read(input),
+                easing: Read::read(input),
+            },
+            31 => ActionType::CameraOffsetReset {
+                duration: Read::read(input),
+                easing: Read::read(input),
+            },
+            32 => ActionType::CameraShake {
+                strength: Read::read(input),
+                roughness: Read::read(input),
+                fade_in: Read::read(input),
+                fade_out: Read::read(input),
+                duration: Read::read(input),
+            },
+            33 => ActionType::PlaySound {
+                sound: Read::read(input),
+                volume: Read::read(input),
+                pitch: Read::read(input),
+            },
+            34 => ActionType::PlayMusic {
+                music: Read::read(input),
+                volume: Read::read(input),
+                pitch: Read::read(input),
+            },
+            35 => ActionType::SetDirection {
+                target_objects: Read::read(input),
+                direction: Read::read(input),
+            },
+            36 => ActionType::SetGravity {
+                target_objects: Read::read(input),
+                gravity: Read::read(input),
+            },
+            37 => ActionType::SetVelocity {
+                target_objects: Read::read(input),
+                velocity: Read::read(input),
+            },
+            38 => ActionType::SetCinematic {
+                enabled: Read::read(input),
+            },
+            39 => ActionType::SetInputEnabled {
+                enabled: Read::read(input),
+            },
+            40 => ActionType::SetTimerEnabled {
+                enabled: Read::read(input),
+            },
+            41 => ActionType::GameTextShow {
+                text: Read::read(input),
+                duration: Read::read(input),
+            },
+            42 => ActionType::DialogueShow {
+                text: Read::read(input),
+                position: Read::read(input),
+                reverse_direction: Read::read(input),
+            },
+            43 => ActionType::StopScript {
+                script: Read::read(input),
+            },
+            44 => ActionType::TransitionIn {
+                type_: Read::read(input),
+                color: Read::read(input),
+                duration: Read::read(input),
+                easing: Read::read(input),
+            },
+            45 => ActionType::TransitionOut {
+                type_: Read::read(input),
+                color: Read::read(input),
+                duration: Read::read(input),
+                easing: Read::read(input),
+            },
+            46 => ActionType::TimeScale {
+                time_scale: Read::read(input),
+                duration: Read::read(input),
+                easing: Read::read(input),
+            },
+            47 => ActionType::RunFunction {
+                function: Read::read(input),
+            },
+            48 => ActionType::SetVariableOverTime {
+                variable: Read::read(input),
+                value: Read::read(input),
+                duration: Read::read(input),
+                easing: Read::read(input),
+            },
+            49 => ActionType::RepeatForEachObject {
+                target_objects: Read::read(input),
+                actions: Read::read(input),
+            },
             _ => panic!("Unknown action type: {with}"),
         }
     }
@@ -1512,27 +1162,16 @@ pub struct NovaValue {
 
 impl Read for NovaValue {
     fn read(input: &mut impl Iterator<Item = u8>) -> Self {
-        let dynamic_type = DynamicType::read(input);
-
-        let bool_value = Read::read(input);
-        let int_value = Read::read(input);
-        let float_value = Read::read(input);
-        let string_value = Read::read(input);
-        let color_value = Read::read(input);
-        let vector_value = Read::read(input);
-        let int_list_value = Read::read(input);
-        let sub_values = Read::read(input);
-
         Self {
-            dynamic_type,
-            bool_value,
-            int_value,
-            float_value,
-            string_value,
-            color_value,
-            vector_value,
-            int_list_value,
-            sub_values,
+            dynamic_type: DynamicType::read(input),
+            bool_value: Read::read(input),
+            int_value: Read::read(input),
+            float_value: Read::read(input),
+            string_value: Read::read(input),
+            color_value: Read::read(input),
+            vector_value: Read::read(input),
+            int_list_value: Read::read(input),
+            sub_values: Read::read(input),
         }
     }
 }
@@ -1751,9 +1390,7 @@ define_dynamic_type!(
 
 impl Read for DynamicType {
     fn read(input: &mut impl Iterator<Item = u8>) -> Self {
-        let value = i32::read(input);
-
-        Self::try_from(value).unwrap()
+        Self::try_from(i32::read(input)).unwrap()
     }
 }
 
@@ -1765,10 +1402,10 @@ pub struct FunctionCall {
 
 impl Read for FunctionCall {
     fn read(input: &mut impl Iterator<Item = u8>) -> Self {
-        let id = Read::read(input);
-        let parameters = Read::read(input);
-
-        Self { id, parameters }
+        Self {
+            id: Read::read(input),
+            parameters: Read::read(input),
+        }
     }
 }
 
@@ -1780,12 +1417,9 @@ pub struct CallParameter {
 
 impl Read for CallParameter {
     fn read(input: &mut impl Iterator<Item = u8>) -> Self {
-        let parameter_id = Read::read(input);
-        let value = Read::read(input);
-
         Self {
-            parameter_id,
-            value,
+            parameter_id: Read::read(input),
+            value: Read::read(input),
         }
     }
 }
@@ -1800,16 +1434,11 @@ pub struct Variable {
 
 impl Read for Variable {
     fn read(input: &mut impl Iterator<Item = u8>) -> Self {
-        let variable_id = Read::read(input);
-        let name = Read::read(input);
-        let static_type = Read::read(input);
-        let initial_value = Read::read(input);
-
         Self {
-            variable_id,
-            name,
-            static_type,
-            initial_value,
+            variable_id: Read::read(input),
+            name: Read::read(input),
+            static_type: Read::read(input),
+            initial_value: Read::read(input),
         }
     }
 }
@@ -1862,9 +1491,7 @@ define_static_type!(
 
 impl Read for StaticType {
     fn read(input: &mut impl Iterator<Item = u8>) -> Self {
-        let value = i32::read(input);
-
-        Self::try_from(value).unwrap()
+        Self::try_from(i32::read(input)).unwrap()
     }
 }
 
@@ -1876,12 +1503,9 @@ pub struct Activator {
 
 impl Read for Activator {
     fn read(input: &mut impl Iterator<Item = u8>) -> Self {
-        let activator_type = Read::read(input);
-        let parameters = Read::read(input);
-
         Self {
-            activator_type,
-            parameters,
+            activator_type: Read::read(input),
+            parameters: Read::read(input),
         }
     }
 }
@@ -1896,16 +1520,11 @@ pub struct Parameter {
 
 impl Read for Parameter {
     fn read(input: &mut impl Iterator<Item = u8>) -> Self {
-        let parameter_id = Read::read(input);
-        let name = Read::read(input);
-        let static_type = Read::read(input);
-        let default_value = Read::read(input);
-
         Self {
-            parameter_id,
-            name,
-            static_type,
-            default_value,
+            parameter_id: Read::read(input),
+            name: Read::read(input),
+            static_type: Read::read(input),
+            default_value: Read::read(input),
         }
     }
 }
