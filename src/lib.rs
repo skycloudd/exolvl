@@ -1,13 +1,13 @@
 use chrono::{DateTime, Utc};
 
 pub trait Read {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error>
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error>
     where
         Self: Sized;
 }
 
 trait ReadVersioned {
-    fn read(input: &mut impl Iterator<Item = u8>, version: i32) -> Result<Self, Error>
+    fn read(input: &mut impl std::io::Read, version: i32) -> Result<Self, Error>
     where
         Self: Sized;
 }
@@ -15,7 +15,7 @@ trait ReadVersioned {
 trait ReadWith {
     type With;
 
-    fn read_with(input: &mut impl Iterator<Item = u8>, with: Self::With) -> Result<Self, Error>
+    fn read_with(input: &mut impl std::io::Read, with: Self::With) -> Result<Self, Error>
     where
         Self: Sized;
 }
@@ -40,23 +40,10 @@ const CONTINUE_BIT: i32 = 0x80;
 struct Varint(i32);
 
 impl Read for Varint {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
-        let mut value = 0;
-        let mut position = 0;
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
+        let value = leb128::read::unsigned(input).map_err(|_| Error::Eof)?;
 
-        loop {
-            let current_byte = u8::read(input)?;
-
-            value |= i32::from(current_byte & SEGMENT_BITS as u8) << position;
-
-            if current_byte & CONTINUE_BIT as u8 == 0 {
-                break;
-            }
-
-            position += 7;
-        }
-
-        Ok(Self(value))
+        Ok(Self(value as i32))
     }
 }
 
@@ -78,10 +65,17 @@ impl Write for Varint {
 }
 
 impl Read for String {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         let len = Varint::read(input)?;
 
-        Ok(input.take(len.0 as usize).map(|b| b as char).collect())
+        let mut string = String::with_capacity(len.0 as usize);
+
+        for _ in 0..len.0 {
+            let c = u8::read(input)? as char;
+            string.push(c);
+        }
+
+        Ok(string)
     }
 }
 
@@ -104,7 +98,7 @@ impl Write for u32 {
 }
 
 impl Read for i32 {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         let mut bytes = [0; 4];
 
         for byte in bytes.iter_mut() {
@@ -122,7 +116,7 @@ impl Write for i32 {
 }
 
 impl Read for i64 {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         let mut bytes = [0; 8];
 
         for byte in bytes.iter_mut() {
@@ -140,7 +134,7 @@ impl Write for i64 {
 }
 
 impl Read for f32 {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         let mut bytes = [0; 4];
 
         for byte in bytes.iter_mut() {
@@ -158,7 +152,7 @@ impl Write for f32 {
 }
 
 impl<T: Read> Read for Vec<T> {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         let len = i32::read(input)? as usize;
 
         let mut vec = Vec::with_capacity(len);
@@ -184,7 +178,7 @@ impl<T: Write> Write for Vec<T> {
 }
 
 impl<T: Read + Copy + Default, const LEN: usize> Read for [T; LEN] {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         let mut arr = [Default::default(); LEN];
 
         for item in arr.iter_mut() {
@@ -206,7 +200,7 @@ impl<T: Write, const LEN: usize> Write for [T; LEN] {
 }
 
 impl<T: Read> Read for Option<T> {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         if bool::read(input)? {
             Ok(Some(Read::read(input)?))
         } else {
@@ -228,7 +222,7 @@ impl<T: Write> Write for Option<T> {
 }
 
 impl Read for bool {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(u8::read(input)? != 0)
     }
 }
@@ -240,8 +234,10 @@ impl Write for bool {
 }
 
 impl Read for u8 {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
-        input.next().ok_or(Error::Eof)
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
+        let mut buf = [0; 1];
+        input.read_exact(&mut buf).map_err(|_| Error::Eof)?;
+        Ok(buf[0])
     }
 }
 
@@ -261,7 +257,7 @@ pub struct Exolvl {
 const MAGIC: &[u8; 4] = b"NYA^";
 
 impl Read for Exolvl {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         let magic: [u8; 4] = Read::read(input)?;
 
         if &magic != MAGIC {
@@ -309,7 +305,7 @@ pub struct LocalLevel {
 }
 
 impl Read for LocalLevel {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
             serialization_version: Read::read(input)?,
             level_id: Read::read(input)?,
@@ -374,7 +370,7 @@ impl From<MyDateTime> for DateTime<Utc> {
 }
 
 impl Read for MyDateTime {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(MyDateTime(i64::read(input)?))
     }
 }
@@ -436,7 +432,7 @@ pub struct LevelData {
 }
 
 impl ReadVersioned for LevelData {
-    fn read(input: &mut impl Iterator<Item = u8>, version: i32) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read, version: i32) -> Result<Self, Error> {
         Ok(Self {
             level_id: Read::read(input)?,
             level_version: Read::read(input)?,
@@ -540,7 +536,7 @@ pub struct Pattern {
 }
 
 impl Read for Pattern {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
             pattern_id: Read::read(input)?,
             pattern_frames: Read::read(input)?,
@@ -563,7 +559,7 @@ pub struct Prefab {
 }
 
 impl Read for Prefab {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
             prefab_id: Read::read(input)?,
             prefab_image_data: Read::read(input)?,
@@ -584,7 +580,7 @@ impl Write for Prefab {
 pub struct Image(pub Vec<u8>);
 
 impl Read for Image {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         let data = Read::read(input)?;
 
         Ok(Self(data))
@@ -611,7 +607,7 @@ pub struct Layer {
 }
 
 impl Read for Layer {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
             layer_id: Read::read(input)?,
             layer_name: Read::read(input)?,
@@ -647,7 +643,7 @@ pub struct Vec2 {
 }
 
 impl Read for Vec2 {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
             x: Read::read(input)?,
             y: Read::read(input)?,
@@ -671,7 +667,7 @@ pub struct Colour {
 }
 
 impl Read for Colour {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
             r: Read::read(input)?,
             g: Read::read(input)?,
@@ -694,7 +690,7 @@ impl Write for Colour {
 pub struct AuthorReplay(pub Vec<u8>);
 
 impl Read for AuthorReplay {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self(Read::read(input)?))
     }
 }
@@ -722,7 +718,7 @@ pub struct Object {
 }
 
 impl Read for Object {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
             entity_id: Read::read(input)?,
             tile_id: Read::read(input)?,
@@ -805,7 +801,7 @@ pub enum ObjectProperty {
 }
 
 impl Read for ObjectProperty {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         let property_type = Read::read(input)?;
 
         Ok(match property_type {
@@ -1046,7 +1042,7 @@ pub struct Brush {
 }
 
 impl Read for Brush {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
             brush_id: Read::read(input)?,
             spread: Read::read(input)?,
@@ -1079,7 +1075,7 @@ pub struct BrushObject {
 }
 
 impl Read for BrushObject {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
             entity_id: Read::read(input)?,
             properties: Read::read(input)?,
@@ -1111,7 +1107,7 @@ pub struct BrushGrid {
 }
 
 impl Read for BrushGrid {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
             x: Read::read(input)?,
             y: Read::read(input)?,
@@ -1140,7 +1136,7 @@ pub struct NovaScript {
 }
 
 impl Read for NovaScript {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
             script_id: Read::read(input)?,
             script_name: Read::read(input)?,
@@ -1177,7 +1173,7 @@ pub struct Action {
 }
 
 impl Read for Action {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         let action_type = Read::read(input)?;
 
         Ok(Self {
@@ -1489,7 +1485,7 @@ impl From<&ActionType> for i32 {
 impl ReadWith for ActionType {
     type With = i32;
 
-    fn read_with(input: &mut impl Iterator<Item = u8>, with: Self::With) -> Result<Self, Error> {
+    fn read_with(input: &mut impl std::io::Read, with: Self::With) -> Result<Self, Error> {
         Ok(match with {
             0 => ActionType::Repeat {
                 actions: Read::read(input)?,
@@ -2080,7 +2076,7 @@ pub struct NovaValue {
 }
 
 impl Read for NovaValue {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
             dynamic_type: DynamicType::read(input)?,
             bool_value: Read::read(input)?,
@@ -2322,7 +2318,7 @@ define_dynamic_type!(
 );
 
 impl Read for DynamicType {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         let value = i32::read(input)?;
 
         Self::try_from(value).map_err(|_| Error::InvalidDynamicType(value))
@@ -2342,7 +2338,7 @@ pub struct FunctionCall {
 }
 
 impl Read for FunctionCall {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
             id: Read::read(input)?,
             parameters: Read::read(input)?,
@@ -2364,7 +2360,7 @@ pub struct CallParameter {
 }
 
 impl Read for CallParameter {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
             parameter_id: Read::read(input)?,
             value: Read::read(input)?,
@@ -2388,7 +2384,7 @@ pub struct Variable {
 }
 
 impl Read for Variable {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
             variable_id: Read::read(input)?,
             name: Read::read(input)?,
@@ -2454,7 +2450,7 @@ define_static_type!(
 );
 
 impl Read for StaticType {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         let value = i32::read(input)?;
 
         Self::try_from(value).map_err(|_| Error::InvalidStaticType(value))
@@ -2474,7 +2470,7 @@ pub struct Activator {
 }
 
 impl Read for Activator {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
             activator_type: Read::read(input)?,
             parameters: Read::read(input)?,
@@ -2498,7 +2494,7 @@ pub struct Parameter {
 }
 
 impl Read for Parameter {
-    fn read(input: &mut impl Iterator<Item = u8>) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
             parameter_id: Read::read(input)?,
             name: Read::read(input)?,
