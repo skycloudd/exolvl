@@ -2,7 +2,18 @@
 name = "exolvl"
 version = "0.4.0"
 edition = "2021"
+authors = ["skycloudd"]
+description = "A library for reading and writing Exoracer level files."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/skycloudd/exolvl"
+keywords = ["exoracer", "exolvl", "gamedev"]
+categories = ["parser-implementations"]
+readme = "README.md"
 
 [dependencies]
-chrono = "0.4.34"
-leb128 = "0.2.5"
+chrono = "0.4"
+leb128 = "0.2"
+serde = { version = "1.0", features = ["derive"], optional = true }
+
+[features]
+serde = ["dep:serde", "chrono/serde"]
