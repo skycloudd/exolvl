@@ -2566,46 +2566,59 @@ impl Write for Parameter {
 }
 
 mod private {
+    use chrono::{DateTime, Utc};
+
     use super::*;
 
     pub trait Sealed {}
 
-    impl Sealed for Varint {}
-    impl Sealed for String {}
-    impl Sealed for u32 {}
-    impl Sealed for i32 {}
-    impl Sealed for i64 {}
-    impl Sealed for f32 {}
+    macro_rules! impl_sealed {
+        ($($ty:ty),*) => {
+            $(
+                impl Sealed for $ty {}
+            )*
+        };
+    }
+
+    impl_sealed!(
+        Varint,
+        String,
+        u32,
+        i32,
+        i64,
+        f32,
+        bool,
+        u8,
+        Exolvl,
+        LocalLevel,
+        DateTime<Utc>,
+        LevelData,
+        Pattern,
+        Prefab,
+        Image,
+        Layer,
+        Vec2,
+        Colour,
+        AuthorReplay,
+        Object,
+        ObjectProperty,
+        Brush,
+        BrushObject,
+        BrushGrid,
+        NovaScript,
+        Action,
+        ActionType,
+        NovaValue,
+        DynamicType,
+        FunctionCall,
+        CallParameter,
+        Variable,
+        StaticType,
+        Activator,
+        Parameter
+    );
+
     impl<T> Sealed for Vec<T> {}
     impl<T, const LEN: usize> Sealed for [T; LEN] {}
     impl<T> Sealed for Option<T> {}
-    impl Sealed for bool {}
-    impl Sealed for u8 {}
-    impl Sealed for Exolvl {}
-    impl Sealed for LocalLevel {}
-    impl Sealed for chrono::DateTime<chrono::Utc> {}
-    impl Sealed for LevelData {}
-    impl Sealed for Pattern {}
-    impl Sealed for Prefab {}
-    impl Sealed for Image {}
-    impl Sealed for Layer {}
-    impl Sealed for Vec2 {}
-    impl Sealed for Colour {}
-    impl Sealed for AuthorReplay {}
-    impl Sealed for Object {}
-    impl Sealed for ObjectProperty {}
-    impl Sealed for Brush {}
-    impl Sealed for BrushObject {}
-    impl Sealed for BrushGrid {}
-    impl Sealed for NovaScript {}
-    impl Sealed for Action {}
-    impl Sealed for ActionType {}
-    impl Sealed for NovaValue {}
-    impl Sealed for DynamicType {}
-    impl Sealed for FunctionCall {}
-    impl Sealed for CallParameter {}
-    impl Sealed for Variable {}
-    impl Sealed for StaticType {}
-    impl Sealed for Activator {}
-    impl Sealed for Parameter {}
 }
