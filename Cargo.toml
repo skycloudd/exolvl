@@ -9,6 +9,7 @@ repository = "https://github.com/skycloudd/exolvl"
 keywords = ["exoracer", "exolvl", "gamedev"]
 categories = ["parser-implementations"]
 readme = "README.md"
+exclude = [".github/*"]
 
 [dependencies]
 chrono = "0.4"
