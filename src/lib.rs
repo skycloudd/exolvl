@@ -13,13 +13,13 @@ pub trait Read: private::Sealed {
     /// # Errors
     ///
     /// Returns an error if the underlying reader returns an error.
-    fn read(input: impl std::io::Read) -> Result<Self, Error>
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error>
     where
         Self: Sized;
 }
 
 trait ReadVersioned {
-    fn read(input: impl std::io::Read, version: i32) -> Result<Self, Error>
+    fn read(input: &mut impl std::io::Read, version: i32) -> Result<Self, Error>
     where
         Self: Sized;
 }
@@ -27,7 +27,7 @@ trait ReadVersioned {
 trait ReadWith {
     type With;
 
-    fn read_with(input: impl std::io::Read, with: Self::With) -> Result<Self, Error>
+    fn read_with(input: &mut impl std::io::Read, with: Self::With) -> Result<Self, Error>
     where
         Self: Sized;
 }
@@ -70,7 +70,7 @@ pub trait Write: private::Sealed {
     /// # Errors
     ///
     /// Returns an error if the underlying writer returns an error.
-    fn write(&self, output: impl std::io::Write) -> std::io::Result<()>;
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()>;
 }
 
 const SEGMENT_BITS: i32 = 0x7F;
@@ -81,15 +81,15 @@ const CONTINUE_BIT: i32 = 0x80;
 struct Varint(i32);
 
 impl Read for Varint {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
-        let value = leb128::read::unsigned(&mut input).map_err(|_| Error::Eof)?;
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
+        let value = leb128::read::unsigned(input).map_err(|_| Error::Eof)?;
 
         Ok(Self(i32::try_from(value).unwrap()))
     }
 }
 
 impl Write for Varint {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
         let mut value = self.0;
 
         loop {
@@ -99,7 +99,7 @@ impl Write for Varint {
             }
 
             (u8::try_from(value & SEGMENT_BITS).unwrap() | u8::try_from(CONTINUE_BIT).unwrap())
-                .write(&mut output)?;
+                .write(output)?;
 
             value >>= 7;
         }
@@ -107,13 +107,13 @@ impl Write for Varint {
 }
 
 impl Read for String {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
-        let len = Varint::read(&mut input)?;
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
+        let len = Varint::read(input)?;
 
         let mut string = Self::with_capacity(usize::try_from(len.0).unwrap());
 
         for _ in 0..len.0 {
-            let c = u8::read(&mut input)? as char;
+            let c = u8::read(input)? as char;
             string.push(c);
         }
 
@@ -122,11 +122,11 @@ impl Read for String {
 }
 
 impl Write for String {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
-        Varint(i32::try_from(self.len()).unwrap()).write(&mut output)?;
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+        Varint(i32::try_from(self.len()).unwrap()).write(output)?;
 
         for c in self.chars() {
-            (c as u8).write(&mut output)?;
+            (c as u8).write(output)?;
         }
 
         Ok(())
@@ -134,17 +134,17 @@ impl Write for String {
 }
 
 impl Write for u32 {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
         output.write_all(&self.to_le_bytes())
     }
 }
 
 impl Read for i32 {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         let mut bytes = [0; 4];
 
         for byte in &mut bytes {
-            *byte = Read::read(&mut input)?;
+            *byte = Read::read(input)?;
         }
 
         Ok(Self::from_le_bytes(bytes))
@@ -152,17 +152,17 @@ impl Read for i32 {
 }
 
 impl Write for i32 {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
         output.write_all(&self.to_le_bytes())
     }
 }
 
 impl Read for i64 {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         let mut bytes = [0; 8];
 
         for byte in &mut bytes {
-            *byte = Read::read(&mut input)?;
+            *byte = Read::read(input)?;
         }
 
         Ok(Self::from_le_bytes(bytes))
@@ -170,17 +170,17 @@ impl Read for i64 {
 }
 
 impl Write for i64 {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
         output.write_all(&self.to_le_bytes())
     }
 }
 
 impl Read for f32 {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         let mut bytes = [0; 4];
 
         for byte in &mut bytes {
-            *byte = Read::read(&mut input)?;
+            *byte = Read::read(input)?;
         }
 
         Ok(Self::from_le_bytes(bytes))
@@ -188,19 +188,19 @@ impl Read for f32 {
 }
 
 impl Write for f32 {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
         output.write_all(&self.to_le_bytes())
     }
 }
 
 impl<T: Read> Read for Vec<T> {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
-        let len = usize::try_from(i32::read(&mut input)?).unwrap();
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
+        let len = usize::try_from(i32::read(input)?).unwrap();
 
         let mut vec = Self::with_capacity(len);
 
         for _ in 0..len {
-            vec.push(Read::read(&mut input)?);
+            vec.push(Read::read(input)?);
         }
 
         Ok(vec)
@@ -208,11 +208,11 @@ impl<T: Read> Read for Vec<T> {
 }
 
 impl<T: Write> Write for Vec<T> {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
-        i32::try_from(self.len()).unwrap().write(&mut output)?;
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+        i32::try_from(self.len()).unwrap().write(output)?;
 
         for item in self {
-            item.write(&mut output)?;
+            item.write(output)?;
         }
 
         Ok(())
@@ -220,11 +220,11 @@ impl<T: Write> Write for Vec<T> {
 }
 
 impl<T: Read + Copy + Default, const LEN: usize> Read for [T; LEN] {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         let mut arr = [Default::default(); LEN];
 
         for item in &mut arr {
-            *item = Read::read(&mut input)?;
+            *item = Read::read(input)?;
         }
 
         Ok(arr)
@@ -232,9 +232,9 @@ impl<T: Read + Copy + Default, const LEN: usize> Read for [T; LEN] {
 }
 
 impl<T: Write, const LEN: usize> Write for [T; LEN] {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
         for item in self {
-            item.write(&mut output)?;
+            item.write(output)?;
         }
 
         Ok(())
@@ -242,9 +242,9 @@ impl<T: Write, const LEN: usize> Write for [T; LEN] {
 }
 
 impl<T: Read> Read for Option<T> {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
-        if bool::read(&mut input)? {
-            Ok(Some(Read::read(&mut input)?))
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
+        if bool::read(input)? {
+            Ok(Some(Read::read(input)?))
         } else {
             Ok(None)
         }
@@ -252,11 +252,11 @@ impl<T: Read> Read for Option<T> {
 }
 
 impl<T: Write> Write for Option<T> {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
-        self.is_some().write(&mut output)?;
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+        self.is_some().write(output)?;
 
         if let Some(value) = self {
-            value.write(&mut output)?;
+            value.write(output)?;
         }
 
         Ok(())
@@ -264,19 +264,19 @@ impl<T: Write> Write for Option<T> {
 }
 
 impl Read for bool {
-    fn read(input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(u8::read(input)? != 0)
     }
 }
 
 impl Write for bool {
-    fn write(&self, output: impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
         u8::from(*self).write(output)
     }
 }
 
 impl Read for u8 {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         let mut buf = [0; 1];
         input.read_exact(&mut buf).map_err(|_| Error::Eof)?;
         Ok(buf[0])
@@ -284,7 +284,7 @@ impl Read for u8 {
 }
 
 impl Write for u8 {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
         output.write_all(&[*self])
     }
 }
@@ -300,16 +300,16 @@ pub struct Exolvl {
 const MAGIC: &[u8; 4] = b"NYA^";
 
 impl Read for Exolvl {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
-        let magic: [u8; 4] = Read::read(&mut input)?;
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
+        let magic: [u8; 4] = Read::read(input)?;
 
         if &magic != MAGIC {
             return Err(Error::WrongMagic);
         }
 
-        let local_level = LocalLevel::read(&mut input)?;
-        let level_data = ReadVersioned::read(&mut input, local_level.serialization_version)?;
-        let author_replay = Read::read(&mut input)?;
+        let local_level = LocalLevel::read(input)?;
+        let level_data = ReadVersioned::read(input, local_level.serialization_version)?;
+        let author_replay = Read::read(input)?;
 
         Ok(Self {
             local_level,
@@ -320,10 +320,10 @@ impl Read for Exolvl {
 }
 
 impl Write for Exolvl {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
-        MAGIC.write(&mut output)?;
-        self.local_level.write(&mut output)?;
-        self.level_data.write(&mut output)?;
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+        MAGIC.write(output)?;
+        self.local_level.write(output)?;
+        self.level_data.write(output)?;
         self.author_replay.write(output)
     }
 }
@@ -349,41 +349,41 @@ pub struct LocalLevel {
 }
 
 impl Read for LocalLevel {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
-            serialization_version: Read::read(&mut input)?,
-            level_id: Read::read(&mut input)?,
-            level_version: Read::read(&mut input)?,
-            level_name: Read::read(&mut input)?,
-            thumbnail: Read::read(&mut input)?,
-            creation_date: Read::read(&mut input)?,
-            update_date: Read::read(&mut input)?,
-            author_time: Read::read(&mut input)?,
-            author_lap_times: Read::read(&mut input)?,
-            silver_medal_time: Read::read(&mut input)?,
-            gold_medal_time: Read::read(&mut input)?,
-            laps: Read::read(&mut input)?,
-            private: Read::read(&mut input)?,
-            unknown_1: Read::read(&mut input)?,
+            serialization_version: Read::read(input)?,
+            level_id: Read::read(input)?,
+            level_version: Read::read(input)?,
+            level_name: Read::read(input)?,
+            thumbnail: Read::read(input)?,
+            creation_date: Read::read(input)?,
+            update_date: Read::read(input)?,
+            author_time: Read::read(input)?,
+            author_lap_times: Read::read(input)?,
+            silver_medal_time: Read::read(input)?,
+            gold_medal_time: Read::read(input)?,
+            laps: Read::read(input)?,
+            private: Read::read(input)?,
+            unknown_1: Read::read(input)?,
         })
     }
 }
 
 impl Write for LocalLevel {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
-        self.serialization_version.write(&mut output)?;
-        self.level_id.write(&mut output)?;
-        self.level_version.write(&mut output)?;
-        self.level_name.write(&mut output)?;
-        self.thumbnail.write(&mut output)?;
-        self.creation_date.write(&mut output)?;
-        self.update_date.write(&mut output)?;
-        self.author_time.write(&mut output)?;
-        self.author_lap_times.write(&mut output)?;
-        self.silver_medal_time.write(&mut output)?;
-        self.gold_medal_time.write(&mut output)?;
-        self.laps.write(&mut output)?;
-        self.private.write(&mut output)?;
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+        self.serialization_version.write(output)?;
+        self.level_id.write(output)?;
+        self.level_version.write(output)?;
+        self.level_name.write(output)?;
+        self.thumbnail.write(output)?;
+        self.creation_date.write(output)?;
+        self.update_date.write(output)?;
+        self.author_time.write(output)?;
+        self.author_lap_times.write(output)?;
+        self.silver_medal_time.write(output)?;
+        self.gold_medal_time.write(output)?;
+        self.laps.write(output)?;
+        self.private.write(output)?;
         self.unknown_1.write(output)
     }
 }
@@ -392,7 +392,7 @@ const TICKS_TO_SECONDS: i64 = 10_000_000;
 const EPOCH_DIFFERENCE: i64 = 62_135_596_800;
 
 impl Read for chrono::DateTime<chrono::Utc> {
-    fn read(input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         let ticks = i64::read(input)?;
 
         let seconds = ticks / TICKS_TO_SECONDS - EPOCH_DIFFERENCE;
@@ -402,7 +402,7 @@ impl Read for chrono::DateTime<chrono::Utc> {
 }
 
 impl Write for chrono::DateTime<chrono::Utc> {
-    fn write(&self, output: impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
         let ticks = (self.timestamp() + EPOCH_DIFFERENCE) * TICKS_TO_SECONDS;
 
         ticks.write(output)
@@ -461,100 +461,99 @@ pub struct LevelData {
 }
 
 impl ReadVersioned for LevelData {
-    fn read(mut input: impl std::io::Read, version: i32) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read, version: i32) -> Result<Self, Error> {
         Ok(Self {
-            level_id: Read::read(&mut input)?,
-            level_version: Read::read(&mut input)?,
-            nova_level: Read::read(&mut input)?,
-            under_decoration_tiles: Read::read(&mut input)?,
-            background_decoration_tiles_2: Read::read(&mut input)?,
-            terrain_tiles: Read::read(&mut input)?,
-            floating_zone_tiles: Read::read(&mut input)?,
-            object_tiles: Read::read(&mut input)?,
-            foreground_decoration_tiles: Read::read(&mut input)?,
-            objects: Read::read(&mut input)?,
-            layers: Read::read(&mut input)?,
-            prefabs: Read::read(&mut input)?,
-            brushes: Read::read(&mut input)?,
-            patterns: Read::read(&mut input)?,
+            level_id: Read::read(input)?,
+            level_version: Read::read(input)?,
+            nova_level: Read::read(input)?,
+            under_decoration_tiles: Read::read(input)?,
+            background_decoration_tiles_2: Read::read(input)?,
+            terrain_tiles: Read::read(input)?,
+            floating_zone_tiles: Read::read(input)?,
+            object_tiles: Read::read(input)?,
+            foreground_decoration_tiles: Read::read(input)?,
+            objects: Read::read(input)?,
+            layers: Read::read(input)?,
+            prefabs: Read::read(input)?,
+            brushes: Read::read(input)?,
+            patterns: Read::read(input)?,
             colour_palette: if version >= 17 {
-                Some(Read::read(&mut input)?)
+                Some(Read::read(input)?)
             } else {
                 None
             },
-            author_time: Read::read(&mut input)?,
-            author_lap_times: Read::read(&mut input)?,
-            silver_medal_time: Read::read(&mut input)?,
-            gold_medal_time: Read::read(&mut input)?,
-            laps: Read::read(&mut input)?,
-            center_camera: Read::read(&mut input)?,
-            scripts: Read::read(&mut input)?,
-            nova_scripts: Read::read(&mut input)?,
-            global_variables: Read::read(&mut input)?,
-            theme: Read::read(&mut input)?,
-            custom_background_colour: Read::read(&mut input)?,
-            unknown1: Read::read(&mut input)?,
-            custom_terrain_colour: Read::read(&mut input)?,
-            unknown_2: Read::read(&mut input)?,
-            custom_terrain_border_colour: Read::read(&mut input)?,
-            custom_terrain_border_thickness: Read::read(&mut input)?,
-            custom_terrain_border_corner_radius: Read::read(&mut input)?,
-            unknown_3: Read::read(&mut input)?,
-            default_music: Read::read(&mut input)?,
-            music_ids: Read::read(&mut input)?,
-            allow_direction_change: Read::read(&mut input)?,
-            disable_replays: Read::read(&mut input)?,
-            disable_revive_pads: Read::read(&mut input)?,
-            disable_start_animation: Read::read(&mut input)?,
-            gravity: Read::read(&mut input)?,
+            author_time: Read::read(input)?,
+            author_lap_times: Read::read(input)?,
+            silver_medal_time: Read::read(input)?,
+            gold_medal_time: Read::read(input)?,
+            laps: Read::read(input)?,
+            center_camera: Read::read(input)?,
+            scripts: Read::read(input)?,
+            nova_scripts: Read::read(input)?,
+            global_variables: Read::read(input)?,
+            theme: Read::read(input)?,
+            custom_background_colour: Read::read(input)?,
+            unknown1: Read::read(input)?,
+            custom_terrain_colour: Read::read(input)?,
+            unknown_2: Read::read(input)?,
+            custom_terrain_border_colour: Read::read(input)?,
+            custom_terrain_border_thickness: Read::read(input)?,
+            custom_terrain_border_corner_radius: Read::read(input)?,
+            unknown_3: Read::read(input)?,
+            default_music: Read::read(input)?,
+            music_ids: Read::read(input)?,
+            allow_direction_change: Read::read(input)?,
+            disable_replays: Read::read(input)?,
+            disable_revive_pads: Read::read(input)?,
+            disable_start_animation: Read::read(input)?,
+            gravity: Read::read(input)?,
         })
     }
 }
 
 impl Write for LevelData {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
-        self.level_id.write(&mut output)?;
-        self.level_version.write(&mut output)?;
-        self.nova_level.write(&mut output)?;
-        self.under_decoration_tiles.write(&mut output)?;
-        self.background_decoration_tiles_2.write(&mut output)?;
-        self.terrain_tiles.write(&mut output)?;
-        self.floating_zone_tiles.write(&mut output)?;
-        self.object_tiles.write(&mut output)?;
-        self.foreground_decoration_tiles.write(&mut output)?;
-        self.objects.write(&mut output)?;
-        self.layers.write(&mut output)?;
-        self.prefabs.write(&mut output)?;
-        self.brushes.write(&mut output)?;
-        self.patterns.write(&mut output)?;
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+        self.level_id.write(output)?;
+        self.level_version.write(output)?;
+        self.nova_level.write(output)?;
+        self.under_decoration_tiles.write(output)?;
+        self.background_decoration_tiles_2.write(output)?;
+        self.terrain_tiles.write(output)?;
+        self.floating_zone_tiles.write(output)?;
+        self.object_tiles.write(output)?;
+        self.foreground_decoration_tiles.write(output)?;
+        self.objects.write(output)?;
+        self.layers.write(output)?;
+        self.prefabs.write(output)?;
+        self.brushes.write(output)?;
+        self.patterns.write(output)?;
         if let Some(colour_palette) = &self.colour_palette {
-            colour_palette.write(&mut output)?;
+            colour_palette.write(output)?;
         }
-        self.author_time.write(&mut output)?;
-        self.author_lap_times.write(&mut output)?;
-        self.silver_medal_time.write(&mut output)?;
-        self.gold_medal_time.write(&mut output)?;
-        self.laps.write(&mut output)?;
-        self.center_camera.write(&mut output)?;
-        self.scripts.write(&mut output)?;
-        self.nova_scripts.write(&mut output)?;
-        self.global_variables.write(&mut output)?;
-        self.theme.write(&mut output)?;
-        self.custom_background_colour.write(&mut output)?;
-        self.unknown1.write(&mut output)?;
-        self.custom_terrain_colour.write(&mut output)?;
-        self.unknown_2.write(&mut output)?;
-        self.custom_terrain_border_colour.write(&mut output)?;
-        self.custom_terrain_border_thickness.write(&mut output)?;
-        self.custom_terrain_border_corner_radius
-            .write(&mut output)?;
-        self.unknown_3.write(&mut output)?;
-        self.default_music.write(&mut output)?;
-        self.music_ids.write(&mut output)?;
-        self.allow_direction_change.write(&mut output)?;
-        self.disable_replays.write(&mut output)?;
-        self.disable_revive_pads.write(&mut output)?;
-        self.disable_start_animation.write(&mut output)?;
+        self.author_time.write(output)?;
+        self.author_lap_times.write(output)?;
+        self.silver_medal_time.write(output)?;
+        self.gold_medal_time.write(output)?;
+        self.laps.write(output)?;
+        self.center_camera.write(output)?;
+        self.scripts.write(output)?;
+        self.nova_scripts.write(output)?;
+        self.global_variables.write(output)?;
+        self.theme.write(output)?;
+        self.custom_background_colour.write(output)?;
+        self.unknown1.write(output)?;
+        self.custom_terrain_colour.write(output)?;
+        self.unknown_2.write(output)?;
+        self.custom_terrain_border_colour.write(output)?;
+        self.custom_terrain_border_thickness.write(output)?;
+        self.custom_terrain_border_corner_radius.write(output)?;
+        self.unknown_3.write(output)?;
+        self.default_music.write(output)?;
+        self.music_ids.write(output)?;
+        self.allow_direction_change.write(output)?;
+        self.disable_replays.write(output)?;
+        self.disable_revive_pads.write(output)?;
+        self.disable_start_animation.write(output)?;
         self.gravity.write(output)
     }
 }
@@ -567,17 +566,17 @@ pub struct Pattern {
 }
 
 impl Read for Pattern {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
-            pattern_id: Read::read(&mut input)?,
-            pattern_frames: Read::read(&mut input)?,
+            pattern_id: Read::read(input)?,
+            pattern_frames: Read::read(input)?,
         })
     }
 }
 
 impl Write for Pattern {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
-        self.pattern_id.write(&mut output)?;
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+        self.pattern_id.write(output)?;
         self.pattern_frames.write(output)
     }
 }
@@ -591,19 +590,19 @@ pub struct Prefab {
 }
 
 impl Read for Prefab {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
-            prefab_id: Read::read(&mut input)?,
-            prefab_image_data: Read::read(&mut input)?,
-            items: Read::read(&mut input)?,
+            prefab_id: Read::read(input)?,
+            prefab_image_data: Read::read(input)?,
+            items: Read::read(input)?,
         })
     }
 }
 
 impl Write for Prefab {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
-        self.prefab_id.write(&mut output)?;
-        self.prefab_image_data.write(&mut output)?;
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+        self.prefab_id.write(output)?;
+        self.prefab_image_data.write(output)?;
         self.items.write(output)
     }
 }
@@ -613,7 +612,7 @@ impl Write for Prefab {
 pub struct Image(pub Vec<u8>);
 
 impl Read for Image {
-    fn read(input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         let data = Read::read(input)?;
 
         Ok(Self(data))
@@ -621,7 +620,7 @@ impl Read for Image {
 }
 
 impl Write for Image {
-    fn write(&self, output: impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
         self.0.write(output)
     }
 }
@@ -641,31 +640,31 @@ pub struct Layer {
 }
 
 impl Read for Layer {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
-            layer_id: Read::read(&mut input)?,
-            layer_name: Read::read(&mut input)?,
-            selected: Read::read(&mut input)?,
-            invisible: Read::read(&mut input)?,
-            locked: Read::read(&mut input)?,
-            foreground_type: Read::read(&mut input)?,
-            parallax: Read::read(&mut input)?,
-            fixed_size: Read::read(&mut input)?,
-            children: Read::read(&mut input)?,
+            layer_id: Read::read(input)?,
+            layer_name: Read::read(input)?,
+            selected: Read::read(input)?,
+            invisible: Read::read(input)?,
+            locked: Read::read(input)?,
+            foreground_type: Read::read(input)?,
+            parallax: Read::read(input)?,
+            fixed_size: Read::read(input)?,
+            children: Read::read(input)?,
         })
     }
 }
 
 impl Write for Layer {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
-        self.layer_id.write(&mut output)?;
-        self.layer_name.write(&mut output)?;
-        self.selected.write(&mut output)?;
-        self.invisible.write(&mut output)?;
-        self.locked.write(&mut output)?;
-        self.foreground_type.write(&mut output)?;
-        self.parallax.write(&mut output)?;
-        self.fixed_size.write(&mut output)?;
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+        self.layer_id.write(output)?;
+        self.layer_name.write(output)?;
+        self.selected.write(output)?;
+        self.invisible.write(output)?;
+        self.locked.write(output)?;
+        self.foreground_type.write(output)?;
+        self.parallax.write(output)?;
+        self.fixed_size.write(output)?;
         self.children.write(output)
     }
 }
@@ -678,17 +677,17 @@ pub struct Vec2 {
 }
 
 impl Read for Vec2 {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
-            x: Read::read(&mut input)?,
-            y: Read::read(&mut input)?,
+            x: Read::read(input)?,
+            y: Read::read(input)?,
         })
     }
 }
 
 impl Write for Vec2 {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
-        self.x.write(&mut output)?;
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+        self.x.write(output)?;
         self.y.write(output)
     }
 }
@@ -703,21 +702,21 @@ pub struct Colour {
 }
 
 impl Read for Colour {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
-            r: Read::read(&mut input)?,
-            g: Read::read(&mut input)?,
-            b: Read::read(&mut input)?,
-            a: Read::read(&mut input)?,
+            r: Read::read(input)?,
+            g: Read::read(input)?,
+            b: Read::read(input)?,
+            a: Read::read(input)?,
         })
     }
 }
 
 impl Write for Colour {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
-        self.r.write(&mut output)?;
-        self.g.write(&mut output)?;
-        self.b.write(&mut output)?;
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+        self.r.write(output)?;
+        self.g.write(output)?;
+        self.b.write(output)?;
         self.a.write(output)
     }
 }
@@ -727,13 +726,13 @@ impl Write for Colour {
 pub struct AuthorReplay(pub Vec<u8>);
 
 impl Read for AuthorReplay {
-    fn read(input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self(Read::read(input)?))
     }
 }
 
 impl Write for AuthorReplay {
-    fn write(&self, output: impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
         self.0.write(output)
     }
 }
@@ -756,37 +755,37 @@ pub struct Object {
 }
 
 impl Read for Object {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
-            entity_id: Read::read(&mut input)?,
-            tile_id: Read::read(&mut input)?,
-            prefab_entity_id: Read::read(&mut input)?,
-            prefab_id: Read::read(&mut input)?,
-            position: Read::read(&mut input)?,
-            scale: Read::read(&mut input)?,
-            rotation: Read::read(&mut input)?,
-            tag: Read::read(&mut input)?,
-            properties: Read::read(&mut input)?,
-            in_layer: Read::read(&mut input)?,
-            in_group: Read::read(&mut input)?,
-            group_members: Read::read(&mut input)?,
+            entity_id: Read::read(input)?,
+            tile_id: Read::read(input)?,
+            prefab_entity_id: Read::read(input)?,
+            prefab_id: Read::read(input)?,
+            position: Read::read(input)?,
+            scale: Read::read(input)?,
+            rotation: Read::read(input)?,
+            tag: Read::read(input)?,
+            properties: Read::read(input)?,
+            in_layer: Read::read(input)?,
+            in_group: Read::read(input)?,
+            group_members: Read::read(input)?,
         })
     }
 }
 
 impl Write for Object {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
-        self.entity_id.write(&mut output)?;
-        self.tile_id.write(&mut output)?;
-        self.prefab_entity_id.write(&mut output)?;
-        self.prefab_id.write(&mut output)?;
-        self.position.write(&mut output)?;
-        self.scale.write(&mut output)?;
-        self.rotation.write(&mut output)?;
-        self.tag.write(&mut output)?;
-        self.properties.write(&mut output)?;
-        self.in_layer.write(&mut output)?;
-        self.in_group.write(&mut output)?;
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+        self.entity_id.write(output)?;
+        self.tile_id.write(output)?;
+        self.prefab_entity_id.write(output)?;
+        self.prefab_id.write(output)?;
+        self.position.write(output)?;
+        self.scale.write(output)?;
+        self.rotation.write(output)?;
+        self.tag.write(output)?;
+        self.properties.write(output)?;
+        self.in_layer.write(output)?;
+        self.in_group.write(output)?;
         self.group_members.write(output)
     }
 }
@@ -840,231 +839,231 @@ pub enum ObjectProperty {
 }
 
 impl Read for ObjectProperty {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
-        let property_type = Read::read(&mut input)?;
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
+        let property_type = Read::read(input)?;
 
         Ok(match property_type {
-            0 => Self::Colour(Read::read(&mut input)?),
-            1 => Self::Resolution(Read::read(&mut input)?),
-            2 => Self::FillMode(Read::read(&mut input)?),
-            3 => Self::SecondaryColour(Read::read(&mut input)?),
-            4 => Self::Thickness(Read::read(&mut input)?),
-            5 => Self::TotalAngle(Read::read(&mut input)?),
-            6 => Self::Corners(Read::read(&mut input)?),
-            7 => Self::Blending(Read::read(&mut input)?),
-            8 => Self::GridOffset(Read::read(&mut input)?),
-            9 => Self::CornerRadius(Read::read(&mut input)?),
-            10 => Self::Width(Read::read(&mut input)?),
-            11 => Self::Height(Read::read(&mut input)?),
-            12 => Self::BorderColour(Read::read(&mut input)?),
-            13 => Self::BorderThickness(Read::read(&mut input)?),
-            14 => Self::PhysicsType(Read::read(&mut input)?),
-            15 => Self::Friction(Read::read(&mut input)?),
-            16 => Self::TerrainCorners(Read::read(&mut input)?),
-            17 => Self::Direction(Read::read(&mut input)?),
-            18 => Self::Impulse(Read::read(&mut input)?),
-            19 => Self::Killer(Read::read(&mut input)?),
-            20 => Self::RoundReflexAngles(Read::read(&mut input)?),
-            21 => Self::RoundCollider(Read::read(&mut input)?),
-            22 => Self::Radius(Read::read(&mut input)?),
-            23 => Self::Size(Read::read(&mut input)?),
-            24 => Self::ReverseDirection(Read::read(&mut input)?),
-            25 => Self::CollisionDetector(Read::read(&mut input)?),
-            26 => Self::Pattern(Read::read(&mut input)?),
-            27 => Self::PatternTiling(Read::read(&mut input)?),
-            28 => Self::PatternOffset(Read::read(&mut input)?),
-            35 => Self::Sprite(Read::read(&mut input)?),
-            36 => Self::Trigger(Read::read(&mut input)?),
-            37 => Self::Health(Read::read(&mut input)?),
-            38 => Self::DamageFromJump(Read::read(&mut input)?),
-            39 => Self::DamageFromDash(Read::read(&mut input)?),
-            40 => Self::ReverseDirOnDamage(Read::read(&mut input)?),
-            41 => Self::Floating(Read::read(&mut input)?),
-            43 => Self::FlipX(Read::read(&mut input)?),
-            44 => Self::FlipY(Read::read(&mut input)?),
-            45 => Self::Text(Read::read(&mut input)?),
-            46 => Self::FontSize(Read::read(&mut input)?),
-            47 => Self::EditorColour(Read::read(&mut input)?),
-            83 => Self::MoonInnerRadius(Read::read(&mut input)?),
-            84 => Self::MoonOffset(Read::read(&mut input)?),
+            0 => Self::Colour(Read::read(input)?),
+            1 => Self::Resolution(Read::read(input)?),
+            2 => Self::FillMode(Read::read(input)?),
+            3 => Self::SecondaryColour(Read::read(input)?),
+            4 => Self::Thickness(Read::read(input)?),
+            5 => Self::TotalAngle(Read::read(input)?),
+            6 => Self::Corners(Read::read(input)?),
+            7 => Self::Blending(Read::read(input)?),
+            8 => Self::GridOffset(Read::read(input)?),
+            9 => Self::CornerRadius(Read::read(input)?),
+            10 => Self::Width(Read::read(input)?),
+            11 => Self::Height(Read::read(input)?),
+            12 => Self::BorderColour(Read::read(input)?),
+            13 => Self::BorderThickness(Read::read(input)?),
+            14 => Self::PhysicsType(Read::read(input)?),
+            15 => Self::Friction(Read::read(input)?),
+            16 => Self::TerrainCorners(Read::read(input)?),
+            17 => Self::Direction(Read::read(input)?),
+            18 => Self::Impulse(Read::read(input)?),
+            19 => Self::Killer(Read::read(input)?),
+            20 => Self::RoundReflexAngles(Read::read(input)?),
+            21 => Self::RoundCollider(Read::read(input)?),
+            22 => Self::Radius(Read::read(input)?),
+            23 => Self::Size(Read::read(input)?),
+            24 => Self::ReverseDirection(Read::read(input)?),
+            25 => Self::CollisionDetector(Read::read(input)?),
+            26 => Self::Pattern(Read::read(input)?),
+            27 => Self::PatternTiling(Read::read(input)?),
+            28 => Self::PatternOffset(Read::read(input)?),
+            35 => Self::Sprite(Read::read(input)?),
+            36 => Self::Trigger(Read::read(input)?),
+            37 => Self::Health(Read::read(input)?),
+            38 => Self::DamageFromJump(Read::read(input)?),
+            39 => Self::DamageFromDash(Read::read(input)?),
+            40 => Self::ReverseDirOnDamage(Read::read(input)?),
+            41 => Self::Floating(Read::read(input)?),
+            43 => Self::FlipX(Read::read(input)?),
+            44 => Self::FlipY(Read::read(input)?),
+            45 => Self::Text(Read::read(input)?),
+            46 => Self::FontSize(Read::read(input)?),
+            47 => Self::EditorColour(Read::read(input)?),
+            83 => Self::MoonInnerRadius(Read::read(input)?),
+            84 => Self::MoonOffset(Read::read(input)?),
             n => return Err(Error::InvalidObjectPropertyType(n)),
         })
     }
 }
 
 impl Write for ObjectProperty {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
         match self {
             Self::Colour(value) => {
-                0.write(&mut output)?;
+                0.write(output)?;
                 value.write(output)
             }
             Self::Resolution(value) => {
-                1.write(&mut output)?;
+                1.write(output)?;
                 value.write(output)
             }
             Self::FillMode(value) => {
-                2.write(&mut output)?;
+                2.write(output)?;
                 value.write(output)
             }
             Self::SecondaryColour(value) => {
-                3.write(&mut output)?;
+                3.write(output)?;
                 value.write(output)
             }
             Self::Thickness(value) => {
-                4.write(&mut output)?;
+                4.write(output)?;
                 value.write(output)
             }
             Self::TotalAngle(value) => {
-                5.write(&mut output)?;
+                5.write(output)?;
                 value.write(output)
             }
             Self::Corners(value) => {
-                6.write(&mut output)?;
+                6.write(output)?;
                 value.write(output)
             }
             Self::Blending(value) => {
-                7.write(&mut output)?;
+                7.write(output)?;
                 value.write(output)
             }
             Self::GridOffset(value) => {
-                8.write(&mut output)?;
+                8.write(output)?;
                 value.write(output)
             }
             Self::CornerRadius(value) => {
-                9.write(&mut output)?;
+                9.write(output)?;
                 value.write(output)
             }
             Self::Width(value) => {
-                10.write(&mut output)?;
+                10.write(output)?;
                 value.write(output)
             }
             Self::Height(value) => {
-                11.write(&mut output)?;
+                11.write(output)?;
                 value.write(output)
             }
             Self::BorderColour(value) => {
-                12.write(&mut output)?;
+                12.write(output)?;
                 value.write(output)
             }
             Self::BorderThickness(value) => {
-                13.write(&mut output)?;
+                13.write(output)?;
                 value.write(output)
             }
             Self::PhysicsType(value) => {
-                14.write(&mut output)?;
+                14.write(output)?;
                 value.write(output)
             }
             Self::Friction(value) => {
-                15.write(&mut output)?;
+                15.write(output)?;
                 value.write(output)
             }
             Self::TerrainCorners(value) => {
-                16.write(&mut output)?;
+                16.write(output)?;
                 value.write(output)
             }
             Self::Direction(value) => {
-                17.write(&mut output)?;
+                17.write(output)?;
                 value.write(output)
             }
             Self::Impulse(value) => {
-                18.write(&mut output)?;
+                18.write(output)?;
                 value.write(output)
             }
             Self::Killer(value) => {
-                19.write(&mut output)?;
+                19.write(output)?;
                 value.write(output)
             }
             Self::RoundReflexAngles(value) => {
-                20.write(&mut output)?;
+                20.write(output)?;
                 value.write(output)
             }
             Self::RoundCollider(value) => {
-                21.write(&mut output)?;
+                21.write(output)?;
                 value.write(output)
             }
             Self::Radius(value) => {
-                22.write(&mut output)?;
+                22.write(output)?;
                 value.write(output)
             }
             Self::Size(value) => {
-                23.write(&mut output)?;
+                23.write(output)?;
                 value.write(output)
             }
             Self::ReverseDirection(value) => {
-                24.write(&mut output)?;
+                24.write(output)?;
                 value.write(output)
             }
             Self::CollisionDetector(value) => {
-                25.write(&mut output)?;
+                25.write(output)?;
                 value.write(output)
             }
             Self::Pattern(value) => {
-                26.write(&mut output)?;
+                26.write(output)?;
                 value.write(output)
             }
             Self::PatternTiling(value) => {
-                27.write(&mut output)?;
+                27.write(output)?;
                 value.write(output)
             }
             Self::PatternOffset(value) => {
-                28.write(&mut output)?;
+                28.write(output)?;
                 value.write(output)
             }
             Self::Sprite(value) => {
-                35.write(&mut output)?;
+                35.write(output)?;
                 value.write(output)
             }
             Self::Trigger(value) => {
-                36.write(&mut output)?;
+                36.write(output)?;
                 value.write(output)
             }
             Self::Health(value) => {
-                37.write(&mut output)?;
+                37.write(output)?;
                 value.write(output)
             }
             Self::DamageFromJump(value) => {
-                38.write(&mut output)?;
+                38.write(output)?;
                 value.write(output)
             }
             Self::DamageFromDash(value) => {
-                39.write(&mut output)?;
+                39.write(output)?;
                 value.write(output)
             }
             Self::ReverseDirOnDamage(value) => {
-                40.write(&mut output)?;
+                40.write(output)?;
                 value.write(output)
             }
             Self::Floating(value) => {
-                41.write(&mut output)?;
+                41.write(output)?;
                 value.write(output)
             }
             Self::FlipX(value) => {
-                43.write(&mut output)?;
+                43.write(output)?;
                 value.write(output)
             }
             Self::FlipY(value) => {
-                44.write(&mut output)?;
+                44.write(output)?;
                 value.write(output)
             }
             Self::Text(value) => {
-                45.write(&mut output)?;
+                45.write(output)?;
                 value.write(output)
             }
             Self::FontSize(value) => {
-                46.write(&mut output)?;
+                46.write(output)?;
                 value.write(output)
             }
             Self::EditorColour(value) => {
-                47.write(&mut output)?;
+                47.write(output)?;
                 value.write(output)
             }
             Self::MoonInnerRadius(value) => {
-                83.write(&mut output)?;
+                83.write(output)?;
                 value.write(output)
             }
             Self::MoonOffset(value) => {
-                84.write(&mut output)?;
+                84.write(output)?;
                 value.write(output)
             }
         }
@@ -1082,23 +1081,23 @@ pub struct Brush {
 }
 
 impl Read for Brush {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
-            brush_id: Read::read(&mut input)?,
-            spread: Read::read(&mut input)?,
-            frequency: Read::read(&mut input)?,
-            grid: Read::read(&mut input)?,
-            objects: Read::read(&mut input)?,
+            brush_id: Read::read(input)?,
+            spread: Read::read(input)?,
+            frequency: Read::read(input)?,
+            grid: Read::read(input)?,
+            objects: Read::read(input)?,
         })
     }
 }
 
 impl Write for Brush {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
-        self.brush_id.write(&mut output)?;
-        self.spread.write(&mut output)?;
-        self.frequency.write(&mut output)?;
-        self.grid.write(&mut output)?;
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+        self.brush_id.write(output)?;
+        self.spread.write(output)?;
+        self.frequency.write(output)?;
+        self.grid.write(output)?;
         self.objects.write(output)
     }
 }
@@ -1116,27 +1115,27 @@ pub struct BrushObject {
 }
 
 impl Read for BrushObject {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
-            entity_id: Read::read(&mut input)?,
-            properties: Read::read(&mut input)?,
-            weight: Read::read(&mut input)?,
-            scale: Read::read(&mut input)?,
-            rotation: Read::read(&mut input)?,
-            flip_x: Read::read(&mut input)?,
-            flip_y: Read::read(&mut input)?,
+            entity_id: Read::read(input)?,
+            properties: Read::read(input)?,
+            weight: Read::read(input)?,
+            scale: Read::read(input)?,
+            rotation: Read::read(input)?,
+            flip_x: Read::read(input)?,
+            flip_y: Read::read(input)?,
         })
     }
 }
 
 impl Write for BrushObject {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
-        self.entity_id.write(&mut output)?;
-        self.properties.write(&mut output)?;
-        self.weight.write(&mut output)?;
-        self.scale.write(&mut output)?;
-        self.rotation.write(&mut output)?;
-        self.flip_x.write(&mut output)?;
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+        self.entity_id.write(output)?;
+        self.properties.write(output)?;
+        self.weight.write(output)?;
+        self.scale.write(output)?;
+        self.rotation.write(output)?;
+        self.flip_x.write(output)?;
         self.flip_y.write(output)
     }
 }
@@ -1149,17 +1148,17 @@ pub struct BrushGrid {
 }
 
 impl Read for BrushGrid {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
-            x: Read::read(&mut input)?,
-            y: Read::read(&mut input)?,
+            x: Read::read(input)?,
+            y: Read::read(input)?,
         })
     }
 }
 
 impl Write for BrushGrid {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
-        self.x.write(&mut output)?;
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+        self.x.write(output)?;
         self.y.write(output)
     }
 }
@@ -1179,31 +1178,31 @@ pub struct NovaScript {
 }
 
 impl Read for NovaScript {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
-            script_id: Read::read(&mut input)?,
-            script_name: Read::read(&mut input)?,
-            is_function: Read::read(&mut input)?,
-            activation_count: Read::read(&mut input)?,
-            condition: Read::read(&mut input)?,
-            activation_list: Read::read(&mut input)?,
-            parameters: Read::read(&mut input)?,
-            variables: Read::read(&mut input)?,
-            actions: Read::read(&mut input)?,
+            script_id: Read::read(input)?,
+            script_name: Read::read(input)?,
+            is_function: Read::read(input)?,
+            activation_count: Read::read(input)?,
+            condition: Read::read(input)?,
+            activation_list: Read::read(input)?,
+            parameters: Read::read(input)?,
+            variables: Read::read(input)?,
+            actions: Read::read(input)?,
         })
     }
 }
 
 impl Write for NovaScript {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
-        self.script_id.write(&mut output)?;
-        self.script_name.write(&mut output)?;
-        self.is_function.write(&mut output)?;
-        self.activation_count.write(&mut output)?;
-        self.condition.write(&mut output)?;
-        self.activation_list.write(&mut output)?;
-        self.parameters.write(&mut output)?;
-        self.variables.write(&mut output)?;
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+        self.script_id.write(output)?;
+        self.script_name.write(output)?;
+        self.is_function.write(output)?;
+        self.activation_count.write(output)?;
+        self.condition.write(output)?;
+        self.activation_list.write(output)?;
+        self.parameters.write(output)?;
+        self.variables.write(output)?;
         self.actions.write(output)
     }
 }
@@ -1217,24 +1216,24 @@ pub struct Action {
 }
 
 impl Read for Action {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
-        let action_type = Read::read(&mut input)?;
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
+        let action_type = Read::read(input)?;
 
         Ok(Self {
-            closed: Read::read(&mut input)?,
-            wait: Read::read(&mut input)?,
+            closed: Read::read(input)?,
+            wait: Read::read(input)?,
             action_type: ReadWith::read_with(input, action_type)?,
         })
     }
 }
 
 impl Write for Action {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
         let action_type = i32::from(&self.action_type);
 
-        action_type.write(&mut output)?;
-        self.closed.write(&mut output)?;
-        self.wait.write(&mut output)?;
+        action_type.write(output)?;
+        self.closed.write(output)?;
+        self.wait.write(output)?;
         self.action_type.write(output)
     }
 }
@@ -1530,233 +1529,233 @@ impl From<&ActionType> for i32 {
 impl ReadWith for ActionType {
     type With = i32;
 
-    fn read_with(mut input: impl std::io::Read, with: Self::With) -> Result<Self, Error> {
+    fn read_with(input: &mut impl std::io::Read, with: Self::With) -> Result<Self, Error> {
         Ok(match with {
             0 => Self::Repeat {
-                actions: Read::read(&mut input)?,
-                count: Read::read(&mut input)?,
+                actions: Read::read(input)?,
+                count: Read::read(input)?,
             },
             1 => Self::RepeatWhile {
-                actions: Read::read(&mut input)?,
-                condition: Read::read(&mut input)?,
+                actions: Read::read(input)?,
+                condition: Read::read(input)?,
             },
             2 => Self::ConditionBlock {
-                if_actions: Read::read(&mut input)?,
-                else_actions: Read::read(&mut input)?,
-                condition: Read::read(&mut input)?,
+                if_actions: Read::read(input)?,
+                else_actions: Read::read(input)?,
+                condition: Read::read(input)?,
             },
             3 => Self::Wait {
-                duration: Read::read(&mut input)?,
+                duration: Read::read(input)?,
             },
             4 => Self::WaitFrames {
-                frames: Read::read(&mut input)?,
+                frames: Read::read(input)?,
             },
             5 => Self::Move {
-                target_objects: Read::read(&mut input)?,
-                position: Read::read(&mut input)?,
-                global: Read::read(&mut input)?,
-                duration: Read::read(&mut input)?,
-                easing: Read::read(&mut input)?,
+                target_objects: Read::read(input)?,
+                position: Read::read(input)?,
+                global: Read::read(input)?,
+                duration: Read::read(input)?,
+                easing: Read::read(input)?,
             },
             6 => Self::Scale {
-                target_objects: Read::read(&mut input)?,
-                scale: Read::read(&mut input)?,
-                duration: Read::read(&mut input)?,
-                easing: Read::read(&mut input)?,
+                target_objects: Read::read(input)?,
+                scale: Read::read(input)?,
+                duration: Read::read(input)?,
+                easing: Read::read(input)?,
             },
             7 => Self::Rotate {
-                target_objects: Read::read(&mut input)?,
-                rotation: Read::read(&mut input)?,
-                shortest_path: Read::read(&mut input)?,
-                global: Read::read(&mut input)?,
-                duration: Read::read(&mut input)?,
-                easing: Read::read(&mut input)?,
+                target_objects: Read::read(input)?,
+                rotation: Read::read(input)?,
+                shortest_path: Read::read(input)?,
+                global: Read::read(input)?,
+                duration: Read::read(input)?,
+                easing: Read::read(input)?,
             },
             8 => Self::RotateAround {
-                target_objects: Read::read(&mut input)?,
-                pivot: Read::read(&mut input)?,
-                rotation: Read::read(&mut input)?,
-                rotate_target: Read::read(&mut input)?,
-                duration: Read::read(&mut input)?,
-                easing: Read::read(&mut input)?,
+                target_objects: Read::read(input)?,
+                pivot: Read::read(input)?,
+                rotation: Read::read(input)?,
+                rotate_target: Read::read(input)?,
+                duration: Read::read(input)?,
+                easing: Read::read(input)?,
             },
             9 => Self::SetVariable {
-                variable: Read::read(&mut input)?,
-                value: Read::read(&mut input)?,
+                variable: Read::read(input)?,
+                value: Read::read(input)?,
             },
             10 => Self::ResetVariable {
-                variable: Read::read(&mut input)?,
+                variable: Read::read(input)?,
             },
             11 => Self::ResetObject {
-                target_objects: Read::read(&mut input)?,
+                target_objects: Read::read(input)?,
             },
             12 => Self::SetColor {
-                target_objects: Read::read(&mut input)?,
-                color: Read::read(&mut input)?,
-                channel: Read::read(&mut input)?,
-                duration: Read::read(&mut input)?,
-                easing: Read::read(&mut input)?,
+                target_objects: Read::read(input)?,
+                color: Read::read(input)?,
+                channel: Read::read(input)?,
+                duration: Read::read(input)?,
+                easing: Read::read(input)?,
             },
             13 => Self::SetTransparency {
-                target_objects: Read::read(&mut input)?,
-                transparency: Read::read(&mut input)?,
-                channel: Read::read(&mut input)?,
-                duration: Read::read(&mut input)?,
-                easing: Read::read(&mut input)?,
+                target_objects: Read::read(input)?,
+                transparency: Read::read(input)?,
+                channel: Read::read(input)?,
+                duration: Read::read(input)?,
+                easing: Read::read(input)?,
             },
             14 => Self::SetSecondaryColor {
-                target_objects: Read::read(&mut input)?,
-                color: Read::read(&mut input)?,
-                duration: Read::read(&mut input)?,
-                easing: Read::read(&mut input)?,
+                target_objects: Read::read(input)?,
+                color: Read::read(input)?,
+                duration: Read::read(input)?,
+                easing: Read::read(input)?,
             },
             15 => Self::SetSecondaryTransparency {
-                target_objects: Read::read(&mut input)?,
-                transparency: Read::read(&mut input)?,
-                duration: Read::read(&mut input)?,
-                easing: Read::read(&mut input)?,
+                target_objects: Read::read(input)?,
+                transparency: Read::read(input)?,
+                duration: Read::read(input)?,
+                easing: Read::read(input)?,
             },
             16 => Self::SetBorderColor {
-                target_objects: Read::read(&mut input)?,
-                color: Read::read(&mut input)?,
-                duration: Read::read(&mut input)?,
-                easing: Read::read(&mut input)?,
+                target_objects: Read::read(input)?,
+                color: Read::read(input)?,
+                duration: Read::read(input)?,
+                easing: Read::read(input)?,
             },
             17 => Self::SetBorderTransparency {
-                target_objects: Read::read(&mut input)?,
-                transparency: Read::read(&mut input)?,
-                duration: Read::read(&mut input)?,
-                easing: Read::read(&mut input)?,
+                target_objects: Read::read(input)?,
+                transparency: Read::read(input)?,
+                duration: Read::read(input)?,
+                easing: Read::read(input)?,
             },
             18 => Self::SetSprite {
-                target_objects: Read::read(&mut input)?,
-                sprite: Read::read(&mut input)?,
+                target_objects: Read::read(input)?,
+                sprite: Read::read(input)?,
             },
             19 => Self::SetText {
-                target_objects: Read::read(&mut input)?,
-                text: Read::read(&mut input)?,
+                target_objects: Read::read(input)?,
+                text: Read::read(input)?,
             },
             20 => Self::SetEnabled {
-                target_objects: Read::read(&mut input)?,
-                enabled: Read::read(&mut input)?,
+                target_objects: Read::read(input)?,
+                enabled: Read::read(input)?,
             },
             21 => Self::Activate {
-                target_objects: Read::read(&mut input)?,
+                target_objects: Read::read(input)?,
             },
             22 => Self::Deactivate {
-                target_objects: Read::read(&mut input)?,
+                target_objects: Read::read(input)?,
             },
             23 => Self::Damage {
-                target_objects: Read::read(&mut input)?,
-                damage: Read::read(&mut input)?,
+                target_objects: Read::read(input)?,
+                damage: Read::read(input)?,
             },
             24 => Self::Kill {
-                target_objects: Read::read(&mut input)?,
+                target_objects: Read::read(input)?,
             },
             25 => Self::GameFinish,
             26 => Self::CameraPan {
-                position: Read::read(&mut input)?,
-                duration: Read::read(&mut input)?,
-                easing: Read::read(&mut input)?,
+                position: Read::read(input)?,
+                duration: Read::read(input)?,
+                easing: Read::read(input)?,
             },
             27 => Self::CameraFollowPlayer,
             28 => Self::CameraZoom {
-                viewport_size: Read::read(&mut input)?,
-                duration: Read::read(&mut input)?,
-                easing: Read::read(&mut input)?,
+                viewport_size: Read::read(input)?,
+                duration: Read::read(input)?,
+                easing: Read::read(input)?,
             },
             29 => Self::CameraZoomReset {
-                duration: Read::read(&mut input)?,
-                easing: Read::read(&mut input)?,
+                duration: Read::read(input)?,
+                easing: Read::read(input)?,
             },
             30 => Self::CameraOffset {
-                offset: Read::read(&mut input)?,
-                duration: Read::read(&mut input)?,
-                easing: Read::read(&mut input)?,
+                offset: Read::read(input)?,
+                duration: Read::read(input)?,
+                easing: Read::read(input)?,
             },
             31 => Self::CameraOffsetReset {
-                duration: Read::read(&mut input)?,
-                easing: Read::read(&mut input)?,
+                duration: Read::read(input)?,
+                easing: Read::read(input)?,
             },
             32 => Self::CameraShake {
-                strength: Read::read(&mut input)?,
-                roughness: Read::read(&mut input)?,
-                fade_in: Read::read(&mut input)?,
-                fade_out: Read::read(&mut input)?,
-                duration: Read::read(&mut input)?,
+                strength: Read::read(input)?,
+                roughness: Read::read(input)?,
+                fade_in: Read::read(input)?,
+                fade_out: Read::read(input)?,
+                duration: Read::read(input)?,
             },
             33 => Self::PlaySound {
-                sound: Read::read(&mut input)?,
-                volume: Read::read(&mut input)?,
-                pitch: Read::read(&mut input)?,
+                sound: Read::read(input)?,
+                volume: Read::read(input)?,
+                pitch: Read::read(input)?,
             },
             34 => Self::PlayMusic {
-                music: Read::read(&mut input)?,
-                volume: Read::read(&mut input)?,
-                pitch: Read::read(&mut input)?,
+                music: Read::read(input)?,
+                volume: Read::read(input)?,
+                pitch: Read::read(input)?,
             },
             35 => Self::SetDirection {
-                target_objects: Read::read(&mut input)?,
-                direction: Read::read(&mut input)?,
+                target_objects: Read::read(input)?,
+                direction: Read::read(input)?,
             },
             36 => Self::SetGravity {
-                target_objects: Read::read(&mut input)?,
-                gravity: Read::read(&mut input)?,
+                target_objects: Read::read(input)?,
+                gravity: Read::read(input)?,
             },
             37 => Self::SetVelocity {
-                target_objects: Read::read(&mut input)?,
-                velocity: Read::read(&mut input)?,
+                target_objects: Read::read(input)?,
+                velocity: Read::read(input)?,
             },
             38 => Self::SetCinematic {
-                enabled: Read::read(&mut input)?,
+                enabled: Read::read(input)?,
             },
             39 => Self::SetInputEnabled {
-                enabled: Read::read(&mut input)?,
+                enabled: Read::read(input)?,
             },
             40 => Self::SetTimerEnabled {
-                enabled: Read::read(&mut input)?,
+                enabled: Read::read(input)?,
             },
             41 => Self::GameTextShow {
-                text: Read::read(&mut input)?,
-                duration: Read::read(&mut input)?,
+                text: Read::read(input)?,
+                duration: Read::read(input)?,
             },
             42 => Self::DialogueShow {
-                text: Read::read(&mut input)?,
-                position: Read::read(&mut input)?,
-                reverse_direction: Read::read(&mut input)?,
+                text: Read::read(input)?,
+                position: Read::read(input)?,
+                reverse_direction: Read::read(input)?,
             },
             43 => Self::StopScript {
-                script: Read::read(&mut input)?,
+                script: Read::read(input)?,
             },
             44 => Self::TransitionIn {
-                type_: Read::read(&mut input)?,
-                color: Read::read(&mut input)?,
-                duration: Read::read(&mut input)?,
-                easing: Read::read(&mut input)?,
+                type_: Read::read(input)?,
+                color: Read::read(input)?,
+                duration: Read::read(input)?,
+                easing: Read::read(input)?,
             },
             45 => Self::TransitionOut {
-                type_: Read::read(&mut input)?,
-                color: Read::read(&mut input)?,
-                duration: Read::read(&mut input)?,
-                easing: Read::read(&mut input)?,
+                type_: Read::read(input)?,
+                color: Read::read(input)?,
+                duration: Read::read(input)?,
+                easing: Read::read(input)?,
             },
             46 => Self::TimeScale {
-                time_scale: Read::read(&mut input)?,
-                duration: Read::read(&mut input)?,
-                easing: Read::read(&mut input)?,
+                time_scale: Read::read(input)?,
+                duration: Read::read(input)?,
+                easing: Read::read(input)?,
             },
             47 => Self::RunFunction {
-                function: Read::read(&mut input)?,
+                function: Read::read(input)?,
             },
             48 => Self::SetVariableOverTime {
-                variable: Read::read(&mut input)?,
-                value: Read::read(&mut input)?,
-                duration: Read::read(&mut input)?,
-                easing: Read::read(&mut input)?,
+                variable: Read::read(input)?,
+                value: Read::read(input)?,
+                duration: Read::read(input)?,
+                easing: Read::read(input)?,
             },
             49 => Self::RepeatForEachObject {
-                target_objects: Read::read(&mut input)?,
-                actions: Read::read(&mut input)?,
+                target_objects: Read::read(input)?,
+                actions: Read::read(input)?,
             },
             n => return Err(Error::InvalidActionType(n)),
         })
@@ -1764,14 +1763,14 @@ impl ReadWith for ActionType {
 }
 
 impl Write for ActionType {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
         match self {
             Self::Repeat { actions, count } => {
-                actions.write(&mut output)?;
+                actions.write(output)?;
                 count.write(output)
             }
             Self::RepeatWhile { actions, condition } => {
-                actions.write(&mut output)?;
+                actions.write(output)?;
                 condition.write(output)
             }
             Self::ConditionBlock {
@@ -1779,8 +1778,8 @@ impl Write for ActionType {
                 else_actions,
                 condition,
             } => {
-                if_actions.write(&mut output)?;
-                else_actions.write(&mut output)?;
+                if_actions.write(output)?;
+                else_actions.write(output)?;
                 condition.write(output)
             }
             Self::Wait { duration } => duration.write(output),
@@ -1792,10 +1791,10 @@ impl Write for ActionType {
                 duration,
                 easing,
             } => {
-                target_objects.write(&mut output)?;
-                position.write(&mut output)?;
-                global.write(&mut output)?;
-                duration.write(&mut output)?;
+                target_objects.write(output)?;
+                position.write(output)?;
+                global.write(output)?;
+                duration.write(output)?;
                 easing.write(output)
             }
             Self::Scale {
@@ -1804,9 +1803,9 @@ impl Write for ActionType {
                 duration,
                 easing,
             } => {
-                target_objects.write(&mut output)?;
-                scale.write(&mut output)?;
-                duration.write(&mut output)?;
+                target_objects.write(output)?;
+                scale.write(output)?;
+                duration.write(output)?;
                 easing.write(output)
             }
             Self::Rotate {
@@ -1817,11 +1816,11 @@ impl Write for ActionType {
                 duration,
                 easing,
             } => {
-                target_objects.write(&mut output)?;
-                rotation.write(&mut output)?;
-                shortest_path.write(&mut output)?;
-                global.write(&mut output)?;
-                duration.write(&mut output)?;
+                target_objects.write(output)?;
+                rotation.write(output)?;
+                shortest_path.write(output)?;
+                global.write(output)?;
+                duration.write(output)?;
                 easing.write(output)
             }
             Self::RotateAround {
@@ -1832,15 +1831,15 @@ impl Write for ActionType {
                 duration,
                 easing,
             } => {
-                target_objects.write(&mut output)?;
-                pivot.write(&mut output)?;
-                rotation.write(&mut output)?;
-                rotate_target.write(&mut output)?;
-                duration.write(&mut output)?;
+                target_objects.write(output)?;
+                pivot.write(output)?;
+                rotation.write(output)?;
+                rotate_target.write(output)?;
+                duration.write(output)?;
                 easing.write(output)
             }
             Self::SetVariable { variable, value } => {
-                variable.write(&mut output)?;
+                variable.write(output)?;
                 value.write(output)
             }
             Self::ResetVariable { variable } => variable.write(output),
@@ -1855,10 +1854,10 @@ impl Write for ActionType {
                 duration,
                 easing,
             } => {
-                target_objects.write(&mut output)?;
-                color.write(&mut output)?;
-                channel.write(&mut output)?;
-                duration.write(&mut output)?;
+                target_objects.write(output)?;
+                color.write(output)?;
+                channel.write(output)?;
+                duration.write(output)?;
                 easing.write(output)
             }
             Self::SetTransparency {
@@ -1868,10 +1867,10 @@ impl Write for ActionType {
                 duration,
                 easing,
             } => {
-                target_objects.write(&mut output)?;
-                transparency.write(&mut output)?;
-                channel.write(&mut output)?;
-                duration.write(&mut output)?;
+                target_objects.write(output)?;
+                transparency.write(output)?;
+                channel.write(output)?;
+                duration.write(output)?;
                 easing.write(output)
             }
             Self::SetSecondaryColor {
@@ -1880,9 +1879,9 @@ impl Write for ActionType {
                 duration,
                 easing,
             } => {
-                target_objects.write(&mut output)?;
-                color.write(&mut output)?;
-                duration.write(&mut output)?;
+                target_objects.write(output)?;
+                color.write(output)?;
+                duration.write(output)?;
                 easing.write(output)
             }
             Self::SetSecondaryTransparency {
@@ -1891,9 +1890,9 @@ impl Write for ActionType {
                 duration,
                 easing,
             } => {
-                target_objects.write(&mut output)?;
-                transparency.write(&mut output)?;
-                duration.write(&mut output)?;
+                target_objects.write(output)?;
+                transparency.write(output)?;
+                duration.write(output)?;
                 easing.write(output)
             }
             Self::SetBorderColor {
@@ -1902,9 +1901,9 @@ impl Write for ActionType {
                 duration,
                 easing,
             } => {
-                target_objects.write(&mut output)?;
-                color.write(&mut output)?;
-                duration.write(&mut output)?;
+                target_objects.write(output)?;
+                color.write(output)?;
+                duration.write(output)?;
                 easing.write(output)
             }
             Self::SetBorderTransparency {
@@ -1913,37 +1912,37 @@ impl Write for ActionType {
                 duration,
                 easing,
             } => {
-                target_objects.write(&mut output)?;
-                transparency.write(&mut output)?;
-                duration.write(&mut output)?;
+                target_objects.write(output)?;
+                transparency.write(output)?;
+                duration.write(output)?;
                 easing.write(output)
             }
             Self::SetSprite {
                 target_objects,
                 sprite,
             } => {
-                target_objects.write(&mut output)?;
+                target_objects.write(output)?;
                 sprite.write(output)
             }
             Self::SetText {
                 target_objects,
                 text,
             } => {
-                target_objects.write(&mut output)?;
+                target_objects.write(output)?;
                 text.write(output)
             }
             Self::SetEnabled {
                 target_objects,
                 enabled,
             } => {
-                target_objects.write(&mut output)?;
+                target_objects.write(output)?;
                 enabled.write(output)
             }
             Self::Damage {
                 target_objects,
                 damage,
             } => {
-                target_objects.write(&mut output)?;
+                target_objects.write(output)?;
                 damage.write(output)
             }
             Self::CameraPan {
@@ -1951,8 +1950,8 @@ impl Write for ActionType {
                 duration,
                 easing,
             } => {
-                position.write(&mut output)?;
-                duration.write(&mut output)?;
+                position.write(output)?;
+                duration.write(output)?;
                 easing.write(output)
             }
             Self::GameFinish | Self::CameraFollowPlayer => Ok(()),
@@ -1961,12 +1960,12 @@ impl Write for ActionType {
                 duration,
                 easing,
             } => {
-                viewport_size.write(&mut output)?;
-                duration.write(&mut output)?;
+                viewport_size.write(output)?;
+                duration.write(output)?;
                 easing.write(output)
             }
             Self::CameraZoomReset { duration, easing } => {
-                duration.write(&mut output)?;
+                duration.write(output)?;
                 easing.write(output)
             }
             Self::CameraOffset {
@@ -1974,12 +1973,12 @@ impl Write for ActionType {
                 duration,
                 easing,
             } => {
-                offset.write(&mut output)?;
-                duration.write(&mut output)?;
+                offset.write(output)?;
+                duration.write(output)?;
                 easing.write(output)
             }
             Self::CameraOffsetReset { duration, easing } => {
-                duration.write(&mut output)?;
+                duration.write(output)?;
                 easing.write(output)
             }
             Self::CameraShake {
@@ -1989,10 +1988,10 @@ impl Write for ActionType {
                 fade_out,
                 duration,
             } => {
-                strength.write(&mut output)?;
-                roughness.write(&mut output)?;
-                fade_in.write(&mut output)?;
-                fade_out.write(&mut output)?;
+                strength.write(output)?;
+                roughness.write(output)?;
+                fade_in.write(output)?;
+                fade_out.write(output)?;
                 duration.write(output)
             }
             Self::PlaySound {
@@ -2000,8 +1999,8 @@ impl Write for ActionType {
                 volume,
                 pitch,
             } => {
-                sound.write(&mut output)?;
-                volume.write(&mut output)?;
+                sound.write(output)?;
+                volume.write(output)?;
                 pitch.write(output)
             }
             Self::PlayMusic {
@@ -2009,36 +2008,36 @@ impl Write for ActionType {
                 volume,
                 pitch,
             } => {
-                music.write(&mut output)?;
-                volume.write(&mut output)?;
+                music.write(output)?;
+                volume.write(output)?;
                 pitch.write(output)
             }
             Self::SetDirection {
                 target_objects,
                 direction,
             } => {
-                target_objects.write(&mut output)?;
+                target_objects.write(output)?;
                 direction.write(output)
             }
             Self::SetGravity {
                 target_objects,
                 gravity,
             } => {
-                target_objects.write(&mut output)?;
+                target_objects.write(output)?;
                 gravity.write(output)
             }
             Self::SetVelocity {
                 target_objects,
                 velocity,
             } => {
-                target_objects.write(&mut output)?;
+                target_objects.write(output)?;
                 velocity.write(output)
             }
             Self::SetCinematic { enabled }
             | Self::SetInputEnabled { enabled }
             | Self::SetTimerEnabled { enabled } => enabled.write(output),
             Self::GameTextShow { text, duration } => {
-                text.write(&mut output)?;
+                text.write(output)?;
                 duration.write(output)
             }
             Self::DialogueShow {
@@ -2046,8 +2045,8 @@ impl Write for ActionType {
                 position,
                 reverse_direction,
             } => {
-                text.write(&mut output)?;
-                position.write(&mut output)?;
+                text.write(output)?;
+                position.write(output)?;
                 reverse_direction.write(output)
             }
             Self::StopScript { script } => script.write(output),
@@ -2057,9 +2056,9 @@ impl Write for ActionType {
                 duration,
                 easing,
             } => {
-                type_.write(&mut output)?;
-                color.write(&mut output)?;
-                duration.write(&mut output)?;
+                type_.write(output)?;
+                color.write(output)?;
+                duration.write(output)?;
                 easing.write(output)
             }
             Self::TransitionOut {
@@ -2068,9 +2067,9 @@ impl Write for ActionType {
                 duration,
                 easing,
             } => {
-                type_.write(&mut output)?;
-                color.write(&mut output)?;
-                duration.write(&mut output)?;
+                type_.write(output)?;
+                color.write(output)?;
+                duration.write(output)?;
                 easing.write(output)
             }
             Self::TimeScale {
@@ -2078,8 +2077,8 @@ impl Write for ActionType {
                 duration,
                 easing,
             } => {
-                time_scale.write(&mut output)?;
-                duration.write(&mut output)?;
+                time_scale.write(output)?;
+                duration.write(output)?;
                 easing.write(output)
             }
             Self::RunFunction { function } => function.write(output),
@@ -2089,16 +2088,16 @@ impl Write for ActionType {
                 duration,
                 easing,
             } => {
-                variable.write(&mut output)?;
-                value.write(&mut output)?;
-                duration.write(&mut output)?;
+                variable.write(output)?;
+                value.write(output)?;
+                duration.write(output)?;
                 easing.write(output)
             }
             Self::RepeatForEachObject {
                 target_objects,
                 actions,
             } => {
-                target_objects.write(&mut output)?;
+                target_objects.write(output)?;
                 actions.write(output)
             }
         }
@@ -2121,31 +2120,31 @@ pub struct NovaValue {
 }
 
 impl Read for NovaValue {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
-            dynamic_type: Read::read(&mut input)?,
-            bool_value: Read::read(&mut input)?,
-            int_value: Read::read(&mut input)?,
-            float_value: Read::read(&mut input)?,
-            string_value: Read::read(&mut input)?,
-            color_value: Read::read(&mut input)?,
-            vector_value: Read::read(&mut input)?,
-            int_list_value: Read::read(&mut input)?,
-            sub_values: Read::read(&mut input)?,
+            dynamic_type: Read::read(input)?,
+            bool_value: Read::read(input)?,
+            int_value: Read::read(input)?,
+            float_value: Read::read(input)?,
+            string_value: Read::read(input)?,
+            color_value: Read::read(input)?,
+            vector_value: Read::read(input)?,
+            int_list_value: Read::read(input)?,
+            sub_values: Read::read(input)?,
         })
     }
 }
 
 impl Write for NovaValue {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
-        self.dynamic_type.write(&mut output)?;
-        self.bool_value.write(&mut output)?;
-        self.int_value.write(&mut output)?;
-        self.float_value.write(&mut output)?;
-        self.string_value.write(&mut output)?;
-        self.color_value.write(&mut output)?;
-        self.vector_value.write(&mut output)?;
-        self.int_list_value.write(&mut output)?;
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+        self.dynamic_type.write(output)?;
+        self.bool_value.write(output)?;
+        self.int_value.write(output)?;
+        self.float_value.write(output)?;
+        self.string_value.write(output)?;
+        self.color_value.write(output)?;
+        self.vector_value.write(output)?;
+        self.int_list_value.write(output)?;
         self.sub_values.write(output)
     }
 }
@@ -2364,7 +2363,7 @@ define_dynamic_type!(
 );
 
 impl Read for DynamicType {
-    fn read(input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         let value = i32::read(input)?;
 
         Self::try_from(value).map_err(|()| Error::InvalidDynamicType(value))
@@ -2372,7 +2371,7 @@ impl Read for DynamicType {
 }
 
 impl Write for DynamicType {
-    fn write(&self, output: impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
         i32::from(self).write(output)
     }
 }
@@ -2385,17 +2384,17 @@ pub struct FunctionCall {
 }
 
 impl Read for FunctionCall {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
-            id: Read::read(&mut input)?,
-            parameters: Read::read(&mut input)?,
+            id: Read::read(input)?,
+            parameters: Read::read(input)?,
         })
     }
 }
 
 impl Write for FunctionCall {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
-        self.id.write(&mut output)?;
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+        self.id.write(output)?;
         self.parameters.write(output)
     }
 }
@@ -2408,17 +2407,17 @@ pub struct CallParameter {
 }
 
 impl Read for CallParameter {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
-            parameter_id: Read::read(&mut input)?,
-            value: Read::read(&mut input)?,
+            parameter_id: Read::read(input)?,
+            value: Read::read(input)?,
         })
     }
 }
 
 impl Write for CallParameter {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
-        self.parameter_id.write(&mut output)?;
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+        self.parameter_id.write(output)?;
         self.value.write(output)
     }
 }
@@ -2433,22 +2432,22 @@ pub struct Variable {
 }
 
 impl Read for Variable {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
-            variable_id: Read::read(&mut input)?,
-            name: Read::read(&mut input)?,
-            static_type: Read::read(&mut input)?,
-            initial_value: Read::read(&mut input)?,
+            variable_id: Read::read(input)?,
+            name: Read::read(input)?,
+            static_type: Read::read(input)?,
+            initial_value: Read::read(input)?,
         })
     }
 }
 
 impl Write for Variable {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
-        self.variable_id.write(&mut output)?;
-        self.name.write(&mut output)?;
-        self.static_type.write(&mut output)?;
-        self.initial_value.write(&mut output)
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+        self.variable_id.write(output)?;
+        self.name.write(output)?;
+        self.static_type.write(output)?;
+        self.initial_value.write(output)
     }
 }
 
@@ -2500,7 +2499,7 @@ define_static_type!(
 );
 
 impl Read for StaticType {
-    fn read(input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         let value = i32::read(input)?;
 
         Self::try_from(value).map_err(|()| Error::InvalidStaticType(value))
@@ -2508,7 +2507,7 @@ impl Read for StaticType {
 }
 
 impl Write for StaticType {
-    fn write(&self, output: impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
         i32::from(self).write(output)
     }
 }
@@ -2521,18 +2520,18 @@ pub struct Activator {
 }
 
 impl Read for Activator {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
-            activator_type: Read::read(&mut input)?,
-            parameters: Read::read(&mut input)?,
+            activator_type: Read::read(input)?,
+            parameters: Read::read(input)?,
         })
     }
 }
 
 impl Write for Activator {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
-        self.activator_type.write(&mut output)?;
-        self.parameters.write(&mut output)
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+        self.activator_type.write(output)?;
+        self.parameters.write(output)
     }
 }
 
@@ -2546,22 +2545,22 @@ pub struct Parameter {
 }
 
 impl Read for Parameter {
-    fn read(mut input: impl std::io::Read) -> Result<Self, Error> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
-            parameter_id: Read::read(&mut input)?,
-            name: Read::read(&mut input)?,
-            static_type: Read::read(&mut input)?,
-            default_value: Read::read(&mut input)?,
+            parameter_id: Read::read(input)?,
+            name: Read::read(input)?,
+            static_type: Read::read(input)?,
+            default_value: Read::read(input)?,
         })
     }
 }
 
 impl Write for Parameter {
-    fn write(&self, mut output: impl std::io::Write) -> std::io::Result<()> {
-        self.parameter_id.write(&mut output)?;
-        self.name.write(&mut output)?;
-        self.static_type.write(&mut output)?;
-        self.default_value.write(&mut output)
+    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+        self.parameter_id.write(output)?;
+        self.name.write(output)?;
+        self.static_type.write(output)?;
+        self.default_value.write(output)
     }
 }
 
