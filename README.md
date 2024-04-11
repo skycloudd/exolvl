@@ -1,5 +1,7 @@
 # Exolvl
 
+[![Rust](https://github.com/skycloudd/exolvl/actions/workflows/rust.yml/badge.svg)](https://github.com/skycloudd/exolvl/actions/workflows/rust.yml)
+
 A library for reading and writing Exoracer level files.
 
 ## Todo
