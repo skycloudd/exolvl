@@ -1,108 +1,36 @@
 #![forbid(unsafe_code)]
+#![warn(clippy::pedantic)]
+#![warn(clippy::nursery)]
+#![warn(missing_copy_implementations)]
+#![warn(missing_debug_implementations)]
+// #![warn(missing_docs)] // uncomment when writing docs
+#![allow(clippy::struct_excessive_bools)]
+#![allow(clippy::too_many_lines)]
+#![cfg_attr(target_os = "windows", doc=include_str!("..\\README.md"))]
+#![cfg_attr(not(target_os = "windows"), doc=include_str!("../README.md"))]
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
+pub mod error;
+mod private;
+pub mod traits;
 
-pub trait Read: private::Sealed {
-    /// Reads a value from the given input.
-    ///
-    /// The input is any type that implements [`std::io::Read`]. This can also be a mutable reference to a type that implements [`std::io::Read`].
-    ///
-    /// This trait is sealed and cannot be implemented for types outside of this crate.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the underlying reader returns an error.
-    fn read(input: &mut impl std::io::Read) -> Result<Self, Error>
-    where
-        Self: Sized;
-}
+use error::Error;
+pub use traits::{Read, ReadContext, ReadVersioned, Write};
 
-trait ReadVersioned {
-    fn read(input: &mut impl std::io::Read, version: i32) -> Result<Self, Error>
-    where
-        Self: Sized;
-}
-
-trait ReadWith {
-    type With;
-
-    fn read_with(input: &mut impl std::io::Read, with: Self::With) -> Result<Self, Error>
-    where
-        Self: Sized;
-}
-
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Error {
-    WrongMagic,
-    InvalidDynamicType(i32),
-    InvalidStaticType(i32),
-    Eof,
-    InvalidObjectPropertyType(i32),
-    InvalidActionType(i32),
-}
-
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::WrongMagic => write!(f, "wrong magic"),
-            Self::InvalidDynamicType(value) => write!(f, "invalid dynamic type: {value}"),
-            Self::InvalidStaticType(value) => write!(f, "invalid static type: {value}"),
-            Self::Eof => write!(f, "end of file"),
-            Self::InvalidObjectPropertyType(value) => {
-                write!(f, "invalid object property type: {value}")
-            }
-            Self::InvalidActionType(value) => write!(f, "invalid action type: {value}"),
-        }
-    }
-}
-
-impl std::error::Error for Error {}
-
-pub trait Write: private::Sealed {
-    /// Writes a value to the given output.
-    ///
-    /// The output is any type that implements [`std::io::Write`]. This can also be a mutable reference to a type that implements [`std::io::Write`].
-    ///
-    /// This trait is sealed and cannot be implemented for types outside of this crate.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the underlying writer returns an error.
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()>;
-}
-
-const SEGMENT_BITS: i32 = 0x7F;
-const CONTINUE_BIT: i32 = 0x80;
-
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 struct Varint(i32);
 
 impl Read for Varint {
     fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
-        let value = leb128::read::unsigned(input).map_err(|_| Error::Eof)?;
+        let value = leb128::read::signed(input)?;
 
-        Ok(Self(i32::try_from(value).unwrap()))
+        Ok(Self(value.try_into().unwrap()))
     }
 }
 
 impl Write for Varint {
     fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
-        let mut value = self.0;
-
-        loop {
-            if (value & !SEGMENT_BITS) == 0 {
-                output.write_all(&[u8::try_from(value).unwrap()])?;
-                return Ok(());
-            }
-
-            (u8::try_from(value & SEGMENT_BITS).unwrap() | u8::try_from(CONTINUE_BIT).unwrap())
-                .write(output)?;
-
-            value >>= 7;
-        }
+        leb128::write::signed(output, self.0.into()).map(|_| ())
     }
 }
 
@@ -278,7 +206,7 @@ impl Write for bool {
 impl Read for u8 {
     fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         let mut buf = [0; 1];
-        input.read_exact(&mut buf).map_err(|_| Error::Eof)?;
+        input.read_exact(&mut buf)?;
         Ok(buf[0])
     }
 }
@@ -289,21 +217,25 @@ impl Write for u8 {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
+/// A full Exoracer level.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
 pub struct Exolvl {
+    /// The local level data for this level.
     pub local_level: LocalLevel,
+    /// The actual level data.
     pub level_data: LevelData,
+    /// The data for the author time replay.
     pub author_replay: AuthorReplay,
 }
 
-const MAGIC: &[u8; 4] = b"NYA^";
+const EXPECTED_MAGIC: &[u8; 4] = b"NYA^";
 
 impl Read for Exolvl {
     fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         let magic: [u8; 4] = Read::read(input)?;
 
-        if &magic != MAGIC {
+        if &magic != EXPECTED_MAGIC {
             return Err(Error::WrongMagic);
         }
 
@@ -321,30 +253,47 @@ impl Read for Exolvl {
 
 impl Write for Exolvl {
     fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
-        MAGIC.write(output)?;
+        EXPECTED_MAGIC.write(output)?;
         self.local_level.write(output)?;
         self.level_data.write(output)?;
         self.author_replay.write(output)
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
+/// The local level data for this level.
+///
+/// This data is only ever used in the level editor and is not uploaded to the server.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, Hash)]
 pub struct LocalLevel {
+    /// The version of the exolvl format that this level uses.
     pub serialization_version: i32,
+    /// The UUID of the level.
     pub level_id: String,
+    /// The version of the level e.g. v1, v2, etc.
     pub level_version: i32,
+    /// The name of the level.
     pub level_name: String,
+    /// The base64-encoded data for the thumbnail of the level.
     pub thumbnail: String,
+    /// When this level was created.
     pub creation_date: chrono::DateTime<chrono::Utc>,
+    /// When this level was last updated.
     pub update_date: chrono::DateTime<chrono::Utc>,
+    /// The author medal time for this level in milliseconds.
     pub author_time: i64,
+    /// The author medal lap times for this level in milliseconds.
     pub author_lap_times: Vec<i64>,
+    /// The silver medal time for this level in milliseconds.
     pub silver_medal_time: i64,
+    /// The gold medal time for this level in milliseconds.
     pub gold_medal_time: i64,
+    /// The number of laps in this level.
     pub laps: i32,
+    /// Whether this level is private or public.
     pub private: bool,
 
+    /// Unknown data.
     unknown_1: u8,
 }
 
@@ -409,54 +358,107 @@ impl Write for chrono::DateTime<chrono::Utc> {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
+/// The level data for an Exoracer level.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
 pub struct LevelData {
+    /// The UUID of the level.
     pub level_id: String,
+    /// The version of the level e.g. v1, v2, etc.
     pub level_version: i32,
+    /// Whether this level is for the new level editor.
+    ///
+    /// If this is true, the level can be opened in the new level editor. Otherwise it's for the "legacy" editor.
     pub nova_level: bool,
+    /// The tile ids for the "under decoration" layer.
     pub under_decoration_tiles: Vec<i32>,
-    pub background_decoration_tiles_2: Vec<i32>,
+    /// The tile ids for the "background decoration" layer.
+    pub background_decoration_tiles: Vec<i32>,
+    /// The tile ids for the terrain layer.
     pub terrain_tiles: Vec<i32>,
+    /// The tile ids for the floating zone layer.
     pub floating_zone_tiles: Vec<i32>,
+    /// The tile ids for the "object" layer.
     pub object_tiles: Vec<i32>,
+    /// The tile ids for the "foreground decoration" layer.
     pub foreground_decoration_tiles: Vec<i32>,
+    /// The objects in the level.
     pub objects: Vec<Object>,
+    /// The layers in the level.
     pub layers: Vec<Layer>,
+    /// The prefabs in the level.
     pub prefabs: Vec<Prefab>,
+    /// The brushes in the level.
     pub brushes: Vec<Brush>,
+    /// The patterns in the level.
     pub patterns: Vec<Pattern>,
+    /// The colour palettes in the level.
+    ///
+    /// This is only present in levels with version 17 or higher.
     pub colour_palette: Option<Vec<Colour>>,
+    /// The author medal time for this level in milliseconds.
     pub author_time: i64,
+    /// The author medal lap times for this level in milliseconds.
     pub author_lap_times: Vec<i64>,
+    /// The silver medal time for this level in milliseconds.
     pub silver_medal_time: i64,
+    /// The gold medal time for this level in milliseconds.
     pub gold_medal_time: i64,
+    /// The number of laps in this level.
     pub laps: i32,
+    /// Whether the camera should be centered while playing this level.
+    ///
+    /// This is mostly deprecated and should stay set to false.
     pub center_camera: bool,
+    /// The scripts in the level.
+    ///
+    /// These are used in the legacy level editor.
     pub scripts: Vec<i32>,
+    /// The "new" scripts in the level.
+    ///
+    /// These are the scripts that are used in the new level editor. As opposed to the `scripts` field which is for the legacy editor.
     pub nova_scripts: Vec<NovaScript>,
+    /// All the global variables in the level.
     pub global_variables: Vec<Variable>,
+    /// The theme name of the level.
     pub theme: String,
+    /// The custom background colour of the level.
     pub custom_background_colour: Colour,
 
+    /// Unknown data.
     unknown1: [u8; 24],
 
+    /// The custom terrain colour of the level.
     pub custom_terrain_colour: Colour,
 
+    /// Unknown data.
     unknown_2: [u8; 20],
 
+    /// The custom terrain border colour of the level.
     pub custom_terrain_border_colour: Colour,
+    /// The thickness of the terrain border.
     pub custom_terrain_border_thickness: f32,
+    /// The corner radius of the terrain border.
     pub custom_terrain_border_corner_radius: f32,
 
-    unknown_3: [u8; 6],
+    /// Unknown data.
+    pub unknown_3: [u8; 6],
 
+    /// Whether the default music should be played or not.
     pub default_music: bool,
+    /// The music ids for the level. The game randomly picks one of these to play each time.
     pub music_ids: Vec<String>,
+    /// Whether the game lets the player change directions or not.
     pub allow_direction_change: bool,
+    /// Whether replays are disabled or not.
+    ///
+    /// If this is true, the game won't upload replays on this level.
     pub disable_replays: bool,
+    /// Whether revive pads are disabled or not.
     pub disable_revive_pads: bool,
+    /// Whether the start animation is disabled or not.
     pub disable_start_animation: bool,
+    /// The gravity vector for this level.
     pub gravity: Vec2,
 }
 
@@ -467,7 +469,7 @@ impl ReadVersioned for LevelData {
             level_version: Read::read(input)?,
             nova_level: Read::read(input)?,
             under_decoration_tiles: Read::read(input)?,
-            background_decoration_tiles_2: Read::read(input)?,
+            background_decoration_tiles: Read::read(input)?,
             terrain_tiles: Read::read(input)?,
             floating_zone_tiles: Read::read(input)?,
             object_tiles: Read::read(input)?,
@@ -517,7 +519,7 @@ impl Write for LevelData {
         self.level_version.write(output)?;
         self.nova_level.write(output)?;
         self.under_decoration_tiles.write(output)?;
-        self.background_decoration_tiles_2.write(output)?;
+        self.background_decoration_tiles.write(output)?;
         self.terrain_tiles.write(output)?;
         self.floating_zone_tiles.write(output)?;
         self.object_tiles.write(output)?;
@@ -558,7 +560,7 @@ impl Write for LevelData {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Pattern {
     pub pattern_id: i32,
@@ -581,8 +583,8 @@ impl Write for Pattern {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
 pub struct Prefab {
     pub prefab_id: i32,
     pub prefab_image_data: Image,
@@ -607,7 +609,7 @@ impl Write for Prefab {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Image(pub Vec<u8>);
 
@@ -625,8 +627,8 @@ impl Write for Image {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
 pub struct Layer {
     pub layer_id: i32,
     pub layer_name: String,
@@ -669,10 +671,13 @@ impl Write for Layer {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
+/// A 2D vector.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Copy, Debug)]
 pub struct Vec2 {
+    /// The x-coordinate.
     pub x: f32,
+    /// The y-coordinate.
     pub y: f32,
 }
 
@@ -692,8 +697,8 @@ impl Write for Vec2 {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Copy, Debug)]
 pub struct Colour {
     pub r: f32,
     pub g: f32,
@@ -721,7 +726,7 @@ impl Write for Colour {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AuthorReplay(pub Vec<u8>);
 
@@ -737,8 +742,8 @@ impl Write for AuthorReplay {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
 pub struct Object {
     pub entity_id: i32,
     pub tile_id: i32,
@@ -790,8 +795,8 @@ impl Write for Object {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
 pub enum ObjectProperty {
     Colour(Colour),
     Resolution(i32),
@@ -1070,8 +1075,8 @@ impl Write for ObjectProperty {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
 pub struct Brush {
     pub brush_id: i32,
     pub spread: Vec2,
@@ -1102,8 +1107,8 @@ impl Write for Brush {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
 pub struct BrushObject {
     pub entity_id: i32,
     pub properties: Vec<ObjectProperty>,
@@ -1140,7 +1145,7 @@ impl Write for BrushObject {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BrushGrid {
     pub x: i32,
@@ -1163,8 +1168,8 @@ impl Write for BrushGrid {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
 pub struct NovaScript {
     pub script_id: i32,
     pub script_name: String,
@@ -1207,8 +1212,8 @@ impl Write for NovaScript {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
 pub struct Action {
     pub closed: bool,
     pub wait: bool,
@@ -1222,7 +1227,7 @@ impl Read for Action {
         Ok(Self {
             closed: Read::read(input)?,
             wait: Read::read(input)?,
-            action_type: ReadWith::read_with(input, action_type)?,
+            action_type: ReadContext::read_ctx(input, action_type)?,
         })
     }
 }
@@ -1238,8 +1243,8 @@ impl Write for Action {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
 pub enum ActionType {
     Repeat {
         actions: Vec<Action>,
@@ -1526,10 +1531,10 @@ impl From<&ActionType> for i32 {
     }
 }
 
-impl ReadWith for ActionType {
-    type With = i32;
+impl ReadContext for ActionType {
+    type Context = i32;
 
-    fn read_with(input: &mut impl std::io::Read, with: Self::With) -> Result<Self, Error> {
+    fn read_ctx(input: &mut impl std::io::Read, with: Self::Context) -> Result<Self, Error> {
         Ok(match with {
             0 => Self::Repeat {
                 actions: Read::read(input)?,
@@ -2104,8 +2109,8 @@ impl Write for ActionType {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
 pub struct NovaValue {
     pub dynamic_type: DynamicType,
 
@@ -2151,8 +2156,8 @@ impl Write for NovaValue {
 
 macro_rules! define_dynamic_type {
     ($($name:ident = $number:expr),*) => {
-        #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-        #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
+        #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+        #[derive(Clone, Copy, Debug,   Hash, PartialEq, Eq, PartialOrd, Ord)]
         pub enum DynamicType {
             $($name = $number),*
         }
@@ -2376,8 +2381,8 @@ impl Write for DynamicType {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
 pub struct FunctionCall {
     pub id: i32,
     pub parameters: Vec<CallParameter>,
@@ -2399,8 +2404,8 @@ impl Write for FunctionCall {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
 pub struct CallParameter {
     pub parameter_id: i32,
     pub value: NovaValue,
@@ -2422,8 +2427,8 @@ impl Write for CallParameter {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
 pub struct Variable {
     pub variable_id: i32,
     pub name: String,
@@ -2453,7 +2458,7 @@ impl Write for Variable {
 
 macro_rules! define_static_type {
     ($($name:ident = $number:expr),*) => {
-        #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+        #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
         #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
         pub enum StaticType {
             $($name = $number),*
@@ -2512,8 +2517,8 @@ impl Write for StaticType {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
 pub struct Activator {
     pub activator_type: i32,
     pub parameters: Vec<NovaValue>,
@@ -2535,8 +2540,8 @@ impl Write for Activator {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
 pub struct Parameter {
     pub parameter_id: i32,
     pub name: String,
@@ -2562,62 +2567,4 @@ impl Write for Parameter {
         self.static_type.write(output)?;
         self.default_value.write(output)
     }
-}
-
-mod private {
-    use chrono::{DateTime, Utc};
-
-    use super::*;
-
-    pub trait Sealed {}
-
-    macro_rules! impl_sealed {
-        ($($ty:ty),*) => {
-            $(
-                impl Sealed for $ty {}
-            )*
-        };
-    }
-
-    impl_sealed!(
-        Varint,
-        String,
-        u32,
-        i32,
-        i64,
-        f32,
-        bool,
-        u8,
-        Exolvl,
-        LocalLevel,
-        DateTime<Utc>,
-        LevelData,
-        Pattern,
-        Prefab,
-        Image,
-        Layer,
-        Vec2,
-        Colour,
-        AuthorReplay,
-        Object,
-        ObjectProperty,
-        Brush,
-        BrushObject,
-        BrushGrid,
-        NovaScript,
-        Action,
-        ActionType,
-        NovaValue,
-        DynamicType,
-        FunctionCall,
-        CallParameter,
-        Variable,
-        StaticType,
-        Activator,
-        Parameter
-    );
-
-    impl<T> Sealed for Vec<T> {}
-    impl<T, const LEN: usize> Sealed for [T; LEN] {}
-    impl<T> Sealed for Option<T> {}
 }
