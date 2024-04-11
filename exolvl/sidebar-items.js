@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ActionType","DynamicType","ObjectProperty","StaticType"],"mod":["error","traits"],"struct":["Action","Activator","AuthorReplay","Brush","BrushGrid","BrushObject","CallParameter","Colour","Exolvl","FunctionCall","Image","Layer","LevelData","LocalLevel","NovaScript","NovaValue","Object","Parameter","Pattern","Prefab","Variable","Vec2"]};
