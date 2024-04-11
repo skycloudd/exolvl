@@ -1,4 +1,6 @@
 use chrono::{DateTime, Utc};
+#[cfg(feature = "image")]
+use image::DynamicImage;
 
 pub trait Sealed {}
 
@@ -47,6 +49,9 @@ impl_sealed!(
     super::Activator,
     super::Parameter,
 );
+
+#[cfg(feature = "image")]
+impl Sealed for DynamicImage {}
 
 impl<T> Sealed for Vec<T> {}
 impl<T, const LEN: usize> Sealed for [T; LEN] {}

@@ -4,6 +4,7 @@ A library for reading and writing Exoracer level files.
 
 ## Todo
 
+-   [ ] More documentation (see <https://github.com/skycloudd/exolvl/issues/1>)
 -   [ ] Implement the `Default` trait for `Exolvl` (?)
 -   [ ] Use the `image` crate for images
 -   [ ] Use the `glam` crate for `Vec2`

@@ -17,6 +17,9 @@ pub enum Error {
     LebRead(leb128::read::Error),
     /// An I/O error occurred while reading/writing to a file.
     Io(std::io::Error),
+    #[cfg(feature = "image")]
+    /// An error occured while loading an image.
+    Image(image::ImageError),
 }
 
 impl std::fmt::Display for Error {
@@ -31,6 +34,8 @@ impl std::fmt::Display for Error {
             Self::InvalidActionType(value) => write!(f, "invalid action type: {value}"),
             Self::LebRead(err) => write!(f, "{err}"),
             Self::Io(err) => write!(f, "{err}"),
+            #[cfg(feature = "image")]
+            Self::Image(err) => write!(f, "{err}"),
         }
     }
 }
@@ -46,5 +51,12 @@ impl From<leb128::read::Error> for Error {
 impl From<std::io::Error> for Error {
     fn from(err: std::io::Error) -> Self {
         Self::Io(err)
+    }
+}
+
+#[cfg(feature = "image")]
+impl From<image::ImageError> for Error {
+    fn from(err: image::ImageError) -> Self {
+        Self::Image(err)
     }
 }

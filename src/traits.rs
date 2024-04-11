@@ -72,5 +72,5 @@ pub trait Write: private::Sealed {
     /// # Errors
     ///
     /// Returns an error if the underlying writer returns an error.
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()>;
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error>;
 }

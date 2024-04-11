@@ -14,6 +14,8 @@ mod private;
 pub mod traits;
 
 use error::Error;
+#[cfg(feature = "image")]
+use image::{DynamicImage, ImageFormat};
 pub use traits::{Read, ReadContext, ReadVersioned, Write};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -29,8 +31,10 @@ impl Read for Varint {
 }
 
 impl Write for Varint {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
-        leb128::write::signed(output, self.0.into()).map(|_| ())
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
+        leb128::write::signed(output, self.0.into())?;
+
+        Ok(())
     }
 }
 
@@ -50,7 +54,7 @@ impl Read for String {
 }
 
 impl Write for String {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         Varint(i32::try_from(self.len()).unwrap()).write(output)?;
 
         for c in self.chars() {
@@ -62,8 +66,8 @@ impl Write for String {
 }
 
 impl Write for u32 {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
-        output.write_all(&self.to_le_bytes())
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
+        Ok(output.write_all(&self.to_le_bytes())?)
     }
 }
 
@@ -80,8 +84,8 @@ impl Read for i32 {
 }
 
 impl Write for i32 {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
-        output.write_all(&self.to_le_bytes())
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
+        Ok(output.write_all(&self.to_le_bytes())?)
     }
 }
 
@@ -98,8 +102,8 @@ impl Read for i64 {
 }
 
 impl Write for i64 {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
-        output.write_all(&self.to_le_bytes())
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
+        Ok(output.write_all(&self.to_le_bytes())?)
     }
 }
 
@@ -116,8 +120,8 @@ impl Read for f32 {
 }
 
 impl Write for f32 {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
-        output.write_all(&self.to_le_bytes())
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
+        Ok(output.write_all(&self.to_le_bytes())?)
     }
 }
 
@@ -136,7 +140,7 @@ impl<T: Read> Read for Vec<T> {
 }
 
 impl<T: Write> Write for Vec<T> {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         i32::try_from(self.len()).unwrap().write(output)?;
 
         for item in self {
@@ -160,7 +164,7 @@ impl<T: Read + Copy + Default, const LEN: usize> Read for [T; LEN] {
 }
 
 impl<T: Write, const LEN: usize> Write for [T; LEN] {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         for item in self {
             item.write(output)?;
         }
@@ -180,7 +184,7 @@ impl<T: Read> Read for Option<T> {
 }
 
 impl<T: Write> Write for Option<T> {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         self.is_some().write(output)?;
 
         if let Some(value) = self {
@@ -198,7 +202,7 @@ impl Read for bool {
 }
 
 impl Write for bool {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         u8::from(*self).write(output)
     }
 }
@@ -212,8 +216,29 @@ impl Read for u8 {
 }
 
 impl Write for u8 {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
-        output.write_all(&[*self])
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
+        Ok(output.write_all(&[*self])?)
+    }
+}
+
+#[cfg(feature = "image")]
+impl Read for DynamicImage {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
+        let vec = Vec::<u8>::read(input)?;
+
+        image::load_from_memory(&vec).map_err(Error::from)
+    }
+}
+
+#[cfg(feature = "image")]
+impl Write for DynamicImage {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
+        let mut vec = std::io::Cursor::new(Vec::new());
+        self.write_to(&mut vec, ImageFormat::Png)?;
+
+        output.write_all(&vec.into_inner())?;
+
+        Ok(())
     }
 }
 
@@ -252,7 +277,7 @@ impl Read for Exolvl {
 }
 
 impl Write for Exolvl {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         EXPECTED_MAGIC.write(output)?;
         self.local_level.write(output)?;
         self.level_data.write(output)?;
@@ -319,7 +344,7 @@ impl Read for LocalLevel {
 }
 
 impl Write for LocalLevel {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         self.serialization_version.write(output)?;
         self.level_id.write(output)?;
         self.level_version.write(output)?;
@@ -351,7 +376,7 @@ impl Read for chrono::DateTime<chrono::Utc> {
 }
 
 impl Write for chrono::DateTime<chrono::Utc> {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         let ticks = (self.timestamp() + EPOCH_DIFFERENCE) * TICKS_TO_SECONDS;
 
         ticks.write(output)
@@ -514,7 +539,7 @@ impl ReadVersioned for LevelData {
 }
 
 impl Write for LevelData {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         self.level_id.write(output)?;
         self.level_version.write(output)?;
         self.nova_level.write(output)?;
@@ -561,7 +586,11 @@ impl Write for LevelData {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "image", derive(Clone, Debug, PartialEq))]
+#[cfg_attr(
+    not(feature = "image"),
+    derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)
+)]
 pub struct Pattern {
     pub pattern_id: i32,
     pub pattern_frames: Vec<Image>,
@@ -577,7 +606,7 @@ impl Read for Pattern {
 }
 
 impl Write for Pattern {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         self.pattern_id.write(output)?;
         self.pattern_frames.write(output)
     }
@@ -602,13 +631,42 @@ impl Read for Prefab {
 }
 
 impl Write for Prefab {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         self.prefab_id.write(output)?;
         self.prefab_image_data.write(output)?;
         self.items.write(output)
     }
 }
 
+#[cfg(feature = "image")]
+#[derive(Clone, Debug, PartialEq)]
+pub struct Image(pub DynamicImage);
+
+#[cfg(all(feature = "image", feature = "serde"))]
+impl serde::Serialize for Image {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.0.as_bytes().serialize(serializer)
+    }
+}
+
+#[cfg(all(feature = "image", feature = "serde"))]
+impl<'de> serde::Deserialize<'de> for Image {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let buffer = serde::Deserialize::deserialize(deserializer)?;
+
+        let img = image::load_from_memory(buffer).map_err(serde::de::Error::custom)?;
+
+        Ok(Self(img))
+    }
+}
+
+#[cfg(not(feature = "image"))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Image(pub Vec<u8>);
@@ -622,7 +680,7 @@ impl Read for Image {
 }
 
 impl Write for Image {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         self.0.write(output)
     }
 }
@@ -658,7 +716,7 @@ impl Read for Layer {
 }
 
 impl Write for Layer {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         self.layer_id.write(output)?;
         self.layer_name.write(output)?;
         self.selected.write(output)?;
@@ -691,7 +749,7 @@ impl Read for Vec2 {
 }
 
 impl Write for Vec2 {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         self.x.write(output)?;
         self.y.write(output)
     }
@@ -718,7 +776,7 @@ impl Read for Colour {
 }
 
 impl Write for Colour {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         self.r.write(output)?;
         self.g.write(output)?;
         self.b.write(output)?;
@@ -737,7 +795,7 @@ impl Read for AuthorReplay {
 }
 
 impl Write for AuthorReplay {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         self.0.write(output)
     }
 }
@@ -779,7 +837,7 @@ impl Read for Object {
 }
 
 impl Write for Object {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         self.entity_id.write(output)?;
         self.tile_id.write(output)?;
         self.prefab_entity_id.write(output)?;
@@ -897,7 +955,7 @@ impl Read for ObjectProperty {
 }
 
 impl Write for ObjectProperty {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         match self {
             Self::Colour(value) => {
                 0.write(output)?;
@@ -1098,7 +1156,7 @@ impl Read for Brush {
 }
 
 impl Write for Brush {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         self.brush_id.write(output)?;
         self.spread.write(output)?;
         self.frequency.write(output)?;
@@ -1134,7 +1192,7 @@ impl Read for BrushObject {
 }
 
 impl Write for BrushObject {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         self.entity_id.write(output)?;
         self.properties.write(output)?;
         self.weight.write(output)?;
@@ -1162,7 +1220,7 @@ impl Read for BrushGrid {
 }
 
 impl Write for BrushGrid {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         self.x.write(output)?;
         self.y.write(output)
     }
@@ -1199,7 +1257,7 @@ impl Read for NovaScript {
 }
 
 impl Write for NovaScript {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         self.script_id.write(output)?;
         self.script_name.write(output)?;
         self.is_function.write(output)?;
@@ -1233,7 +1291,7 @@ impl Read for Action {
 }
 
 impl Write for Action {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         let action_type = i32::from(&self.action_type);
 
         action_type.write(output)?;
@@ -1768,7 +1826,7 @@ impl ReadContext for ActionType {
 }
 
 impl Write for ActionType {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         match self {
             Self::Repeat { actions, count } => {
                 actions.write(output)?;
@@ -2141,7 +2199,7 @@ impl Read for NovaValue {
 }
 
 impl Write for NovaValue {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         self.dynamic_type.write(output)?;
         self.bool_value.write(output)?;
         self.int_value.write(output)?;
@@ -2376,7 +2434,7 @@ impl Read for DynamicType {
 }
 
 impl Write for DynamicType {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         i32::from(self).write(output)
     }
 }
@@ -2398,7 +2456,7 @@ impl Read for FunctionCall {
 }
 
 impl Write for FunctionCall {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         self.id.write(output)?;
         self.parameters.write(output)
     }
@@ -2421,7 +2479,7 @@ impl Read for CallParameter {
 }
 
 impl Write for CallParameter {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         self.parameter_id.write(output)?;
         self.value.write(output)
     }
@@ -2448,7 +2506,7 @@ impl Read for Variable {
 }
 
 impl Write for Variable {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         self.variable_id.write(output)?;
         self.name.write(output)?;
         self.static_type.write(output)?;
@@ -2512,7 +2570,7 @@ impl Read for StaticType {
 }
 
 impl Write for StaticType {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         i32::from(self).write(output)
     }
 }
@@ -2534,7 +2592,7 @@ impl Read for Activator {
 }
 
 impl Write for Activator {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         self.activator_type.write(output)?;
         self.parameters.write(output)
     }
@@ -2561,7 +2619,7 @@ impl Read for Parameter {
 }
 
 impl Write for Parameter {
-    fn write(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         self.parameter_id.write(output)?;
         self.name.write(output)?;
         self.static_type.write(output)?;
