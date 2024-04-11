@@ -6,7 +6,7 @@ A library for reading and writing Exoracer level files.
 
 -   [ ] More documentation (see <https://github.com/skycloudd/exolvl/issues/1>)
 -   [ ] Implement the `Default` trait for `Exolvl` (?)
--   [ ] Use the `image` crate for images
+-   [x] Use the `image` crate for images
 -   [ ] Use the `glam` crate for `Vec2`
 -   [ ] Use a `Duration` type for things like medal times
 -   [ ] Use `Uuid` for UUIDs instead of `String`
