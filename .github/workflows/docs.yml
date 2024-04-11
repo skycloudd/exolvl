@@ -17,6 +17,8 @@ jobs:
             - uses: actions/checkout@v4
             - name: Docs
               run: cargo doc --no-deps --all-features
+            - name: Create index.html
+              run: echo "<meta http-equiv=\"refresh\" content=\"0; url=exolvl\">" > target/doc/index.html
             - name: Deploy
               uses: peaceiris/actions-gh-pages@v4
               with:
