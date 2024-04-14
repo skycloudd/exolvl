@@ -17,6 +17,7 @@ use error::Error;
 #[cfg(feature = "image")]
 use image::{DynamicImage, ImageFormat};
 pub use traits::{Read, ReadContext, ReadVersioned, Write};
+use uuid::Uuid;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
@@ -285,6 +286,78 @@ impl Write for Exolvl {
     }
 }
 
+impl Default for Exolvl {
+    fn default() -> Self {
+        let level_id = uuid::Uuid::new_v4();
+        Self { 
+            local_level: LocalLevel { 
+                serialization_version: 18, 
+                level_id: level_id.clone(),
+                level_version: 1,
+                level_name: "".to_string(),
+                thumbnail: "".to_string(),
+                creation_date: chrono::Utc::now(),
+                update_date: chrono::Utc::now(),
+                author_time: Default::default(),
+                author_lap_times: Default::default(),
+                silver_medal_time: Default::default(),
+                gold_medal_time: Default::default(),
+                laps: 1,
+                private: Default::default(),
+                nova_level: true,
+            }, 
+            level_data: LevelData { 
+                level_id: level_id,
+                level_version: 1,
+                nova_level: true,
+                under_decoration_tiles: Default::default(),
+                background_decoration_tiles: Default::default(),
+                terrain_tiles: Default::default(),
+                floating_zone_tiles: Default::default(),
+                object_tiles: Default::default(),
+                foreground_decoration_tiles: Default::default(),
+                objects: Default::default(),
+                layers: Default::default(),
+                prefabs: Default::default(),
+                brushes: Default::default(),
+                patterns: Default::default(),
+                colour_palette: Some(Default::default()),
+                author_time: Default::default(),
+                author_lap_times: Default::default(),
+                silver_medal_time: Default::default(),
+                gold_medal_time: Default::default(),
+                laps: 1,
+                center_camera: Default::default(),
+                scripts: Default::default(),
+                nova_scripts: Default::default(),
+                global_variables: Default::default(),
+                theme: "mountains".to_string(),
+                custom_background_colour: Default::default(),
+                unknown1: [0; 4],
+                custom_terrain_pattern_id: Default::default(),
+                custom_terrain_pattern_tiling: Default::default(),
+                custom_terrain_pattern_offset: Default::default(),
+                custom_terrain_colour: Default::default(),
+                custom_terrain_secondary_color: Default::default(),
+                custom_terrain_blend_mode: Default::default(),
+                custom_terrain_border_colour: Default::default(),
+                custom_terrain_border_thickness: Default::default(),
+                custom_terrain_border_corner_radius: Default::default(),
+                custom_terrain_round_reflex_angles: Default::default(),
+                custom_terrain_round_collider: Default::default(),
+                custom_terrain_friction: Default::default(),
+                default_music: true,
+                music_ids: Default::default(),
+                allow_direction_change: Default::default(),
+                disable_replays: Default::default(),
+                disable_revive_pads: Default::default(),
+                disable_start_animation: Default::default(),
+                gravity: Vec2 { x: 0.0, y: -75.0 } 
+            },
+            author_replay: AuthorReplay(Default::default()),
+        }
+    }
+}
 /// The local level data for this level.
 ///
 /// This data is only ever used in the level editor and is not uploaded to the server.
@@ -292,9 +365,11 @@ impl Write for Exolvl {
 #[derive(Clone, Debug, Hash)]
 pub struct LocalLevel {
     /// The version of the exolvl format that this level uses.
+    /// 
+    /// The current latest serialization version is 18.
     pub serialization_version: i32,
     /// The UUID of the level.
-    pub level_id: String,
+    pub level_id: Uuid,
     /// The version of the level e.g. v1, v2, etc.
     pub level_version: i32,
     /// The name of the level.
@@ -388,7 +463,7 @@ impl Write for chrono::DateTime<chrono::Utc> {
 #[derive(Clone, Debug)]
 pub struct LevelData {
     /// The UUID of the level.
-    pub level_id: String,
+    pub level_id: Uuid,
     /// The version of the level e.g. v1, v2, etc.
     pub level_version: i32,
     /// Whether this level is for the new level editor.
@@ -780,6 +855,15 @@ impl Write for Vec2 {
     }
 }
 
+impl Default for Vec2 {
+    fn default() -> Self {
+        Self {
+            x: 0.0,
+            y: 0.0,
+        }
+    }
+}
+
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Copy, Debug)]
 pub struct Colour {
@@ -806,6 +890,17 @@ impl Write for Colour {
         self.g.write(output)?;
         self.b.write(output)?;
         self.a.write(output)
+    }
+}
+
+impl Default for Colour {
+    fn default() -> Self {
+        Self {
+            r: 0.0,
+            g: 0.0,
+            b: 0.0,
+            a: 1.0,
+        }
     }
 }
 
@@ -1470,6 +1565,164 @@ impl Write for BrushGrid {
     fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         self.x.write(output)?;
         self.y.write(output)
+    }
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
+pub struct Script {
+    pub script_id: uuid::Uuid,
+    pub name: String,
+    pub creation_date: chrono::DateTime<chrono::Utc>,
+    pub actions: Vec<OldAction>,
+}
+
+impl Read for Script {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error>
+        where
+            Self: Sized {
+        Ok(Self { 
+            script_id: Read::read(input)?,
+            name: Read::read(input)?,
+            creation_date: Read::read(input)?,
+            actions: Read::read(input)?,
+        })
+    }
+}
+
+impl Write for Script {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
+        self.script_id.write(output)?;
+        self.name.write(output)?;
+        self.creation_date.write(output)?;
+        self.actions.write(output)
+    }
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
+pub struct OldAction {
+    pub action_type: OldActionType,
+    pub wait: bool,
+    pub properties: Vec<OldActionProperty>,
+}
+
+impl Read for OldAction {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error>
+        where
+            Self: Sized {
+        Ok(Self { 
+            action_type: Read::read(input)?,
+            wait: Read::read(input)?,
+            properties: Read::read(input)?,
+        })
+    }
+}
+
+impl Write for OldAction {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
+        self.action_type.write(output)?;
+        self.wait.write(output)?;
+        self.properties.write(output)
+    }
+}
+
+macro_rules! define_old_action_type {
+    ($($name:ident = $number:expr),*) => {
+        #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+        #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
+        pub enum OldActionType {
+            $($name = $number),*
+        }
+
+        impl TryFrom<i32> for OldActionType {
+            type Error = ();
+
+            fn try_from(value: i32) -> Result<Self, Self::Error> {
+                match value {
+                    $($number => Ok(OldActionType::$name),)*
+                    _ => Err(())
+                }
+            }
+        }
+
+        impl From<&OldActionType> for i32 {
+            fn from(value: &OldActionType) -> Self {
+                match value {
+                    $(OldActionType::$name => $number,)*
+                }
+            }
+        }
+    };
+}
+
+define_old_action_type!(
+    RunScript = 0,
+    StopScripts = 1,
+    Wait = 2,
+    WaitFrames = 3,
+    Move = 4,
+    Jump = 5,
+    Slam = 6,
+    Charge = 7,
+    Scale = 8,
+    Rotate = 9,
+    RotateAround = 10,
+    SetDirection = 11,
+    Activate = 12,
+    Deactivate = 13,
+    PlaySound = 14,
+    PlayMusic = 15,
+    SetCinematic = 16,
+    SetInputEnabled = 17,
+    PanCameraToObject = 18,
+    CameraFollowPlayer = 19,
+    ShowGameText = 20,
+    SetVulnerable = 21,
+    Color = 22,
+    Damage = 23,
+    Kill = 24,
+    Finish = 25,
+    SetGravity = 26,
+    SetVelocity = 27
+);
+
+impl Read for OldActionType {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
+        let value = i32::read(input)?;
+
+        Self::try_from(value).map_err(|()| Error::InvalidDynamicType(value))
+    }
+}
+
+impl Write for OldActionType {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
+        i32::from(self).write(output)
+    }
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
+pub struct OldActionProperty {
+    pub name: String,
+    pub value: String,
+}
+
+impl Read for OldActionProperty {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error>
+        where
+            Self: Sized {
+        Ok(Self { 
+            name: Read::read(input)?,
+            value: Read::read(input)?,
+        })
+    }
+}
+
+impl Write for OldActionProperty {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
+        self.name.write(output)?;
+        self.value.write(output)
     }
 }
 
@@ -2932,5 +3185,19 @@ impl Write for Parameter {
         self.name.write(output)?;
         self.static_type.write(output)?;
         self.default_value.write(output)
+    }
+}
+
+impl Read for Uuid {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error>
+        where
+            Self: Sized {
+        Ok(uuid::Uuid::parse_str(&String::read(input)?).unwrap())
+    }
+}
+
+impl Write for Uuid {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
+        self.to_string().write(output)
     }
 }
