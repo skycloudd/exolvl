@@ -469,7 +469,7 @@ pub struct LevelData {
     /// Whether this level is for the new level editor.
     ///
     /// If this is true, the level can be opened in the new level editor. Otherwise it's for the "legacy" editor. 
-    /// This Field is presumably only useful in .level files, not in .exolvl ones. A mismatch with the correspomding LocalLevel field should be avoided.
+    /// This Field is presumably only useful in .level files, not in .exolvl ones. A mismatch with the corresponding LocalLevel field should be avoided.
     pub nova_level: bool,
     /// The tile ids for the "under decoration" layer.
     pub under_decoration_tiles: Vec<i32>,
