@@ -1,4 +1,4 @@
-#![forbid(unsafe_code)]
+    #![forbid(unsafe_code)]
 #![warn(clippy::pedantic)]
 #![warn(clippy::nursery)]
 #![warn(missing_copy_implementations)]
@@ -294,7 +294,7 @@ impl Default for Exolvl {
                 serialization_version: 18, 
                 level_id: level_id.clone(),
                 level_version: 1,
-                level_name: "".to_string(),
+                level_name: "New level".to_string(),
                 thumbnail: "".to_string(),
                 creation_date: chrono::Utc::now(),
                 update_date: chrono::Utc::now(),
