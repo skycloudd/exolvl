@@ -34,9 +34,9 @@ jobs:
             - uses: Swatinem/rust-cache@v2
 
             - run: cargo build      --verbose --all-features
-            - run: cargo test       --verbose --all-features
+            - run: cargo test       --verbose --all-features     --release
+            - run: cargo hack test  --verbose --feature-powerset --release
             - run: cargo hack check --verbose --feature-powerset --no-dev-deps
-            - run: cargo hack test  --verbose --feature-powerset
 
             - uses: actions-rs/clippy-check@v1
               with:

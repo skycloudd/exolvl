@@ -1,4 +1,5 @@
 use crate::{error::Error, types::varint::Varint, Read, Write};
+use cs_datetime_parse::DateTimeCs;
 use uuid::Uuid;
 
 impl Read for String {
@@ -18,7 +19,7 @@ impl Read for String {
 
 impl Write for String {
     fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
-        Varint(i32::try_from(self.len()).unwrap()).write(output)?;
+        Varint(u64::try_from(self.len()).unwrap()).write(output)?;
 
         for c in self.chars() {
             (c as u8).write(output)?;
@@ -30,7 +31,7 @@ impl Write for String {
 
 impl Write for &str {
     fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
-        Varint(i32::try_from(self.len()).unwrap()).write(output)?;
+        Varint(u64::try_from(self.len()).unwrap()).write(output)?;
 
         for c in self.chars() {
             (c as u8).write(output)?;
@@ -196,24 +197,31 @@ impl Write for u8 {
     }
 }
 
-const TICKS_TO_SECONDS: i64 = 10_000_000;
-const EPOCH_DIFFERENCE: i64 = 62_135_596_800;
-
 impl Read for chrono::DateTime<chrono::Utc> {
     fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         let ticks = i64::read(input)?;
+        let parsed = DateTimeCs::from_binary(ticks).unwrap();
 
-        let seconds = ticks / TICKS_TO_SECONDS - EPOCH_DIFFERENCE;
+        let DateTimeCs::Utc(datetime) = parsed else {
+            panic!("datetime must be utc")
+        };
 
-        Ok(Self::from_timestamp(seconds, 0).unwrap())
+        Ok(Self::from_timestamp_nanos(
+            datetime.unix_timestamp_nanos().try_into().unwrap(),
+        ))
     }
 }
 
 impl Write for chrono::DateTime<chrono::Utc> {
     fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
-        let ticks = (self.timestamp() + EPOCH_DIFFERENCE) * TICKS_TO_SECONDS;
+        let datetime = time::OffsetDateTime::from_unix_timestamp_nanos(
+            self.timestamp_nanos_opt().unwrap().into(),
+        )
+        .unwrap();
 
-        ticks.write(output)
+        let datetime = DateTimeCs::Utc(datetime);
+
+        datetime.to_binary().unwrap().write(output)
     }
 }
 

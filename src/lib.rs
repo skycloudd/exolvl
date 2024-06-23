@@ -3,8 +3,11 @@
 // #![warn(missing_docs)] // uncomment when writing docs
 
 pub mod error;
+pub mod gzip;
 mod primitive_impls;
 mod private;
+#[cfg(test)]
+mod tests;
 mod traits;
 pub mod types;
 
