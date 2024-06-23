@@ -13,7 +13,7 @@ use uuid::Uuid;
 
 /// The level data for an Exoracer level.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct LevelData {
     /// The UUID of the level.
@@ -127,6 +127,23 @@ pub struct LevelData {
     pub disable_start_animation: bool,
     /// The gravity vector for this level.
     pub gravity: Vec2,
+}
+
+impl LevelData {
+    #[must_use]
+    pub fn default_with_id(level_id: Uuid) -> Self {
+        Self {
+            level_id,
+            level_version: 1,
+            nova_level: true,
+            colour_palette: Some(Vec::default()),
+            laps: 1,
+            theme: "mountains".to_string(),
+            default_music: true,
+            gravity: Vec2 { x: 0.0, y: -75.0 },
+            ..Default::default()
+        }
+    }
 }
 
 impl ReadVersioned for LevelData {

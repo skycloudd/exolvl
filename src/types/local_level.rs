@@ -5,7 +5,7 @@ use uuid::Uuid;
 ///
 /// This data is only ever used in the level editor and is not uploaded to the server.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, Hash)]
+#[derive(Clone, Debug, Default, Hash)]
 pub struct LocalLevel {
     /// The version of the exolvl format that this level uses.
     ///
@@ -86,18 +86,14 @@ impl LocalLevel {
         Self {
             serialization_version: 18,
             level_id,
-            level_version: Default::default(),
             level_name: String::from("New level"),
-            thumbnail: String::default(),
             creation_date: chrono::Utc::now(),
             update_date: chrono::Utc::now(),
-            author_time: Default::default(),
-            author_lap_times: Vec::default(),
-            silver_medal_time: Default::default(),
-            gold_medal_time: Default::default(),
             laps: 1,
-            private: Default::default(),
             nova_level: true,
+            level_version: 1,
+            private: false,
+            ..Default::default()
         }
     }
 }
