@@ -676,7 +676,7 @@
             <span class="number">82 </span>=&gt; <span class="self">Self</span>::AnchorPos(Read::read(input)<span class="question-mark">?</span>),
             <span class="number">83 </span>=&gt; <span class="self">Self</span>::MoonInnerRadius(Read::read(input)<span class="question-mark">?</span>),
             <span class="number">84 </span>=&gt; <span class="self">Self</span>::MoonOffset(Read::read(input)<span class="question-mark">?</span>),
-            n =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="kw">crate</span>::error::Error::InvalidObjectPropertyType(n)),
+            n =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::InvalidObjectPropertyType(n)),
         })
     }
 }

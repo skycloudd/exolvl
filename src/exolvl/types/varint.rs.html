@@ -22,7 +22,7 @@
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{error::Error, Read, Write};
 
 <span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 </span><span class="kw">pub struct </span>Varint(<span class="kw">pub </span>i32);
 
 <span class="kw">impl </span>Read <span class="kw">for </span>Varint {

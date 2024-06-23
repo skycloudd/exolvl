@@ -263,6 +263,7 @@
     object::Object,
     pattern::Pattern,
     prefab::Prefab,
+    theme::Theme,
     vec2::Vec2,
 };
 <span class="kw">use crate</span>::{error::Error, Read, ReadVersioned, Write};
@@ -333,7 +334,7 @@
     <span class="doccomment">/// All the global variables in the level.
     </span><span class="kw">pub </span>global_variables: Vec&lt;Variable&gt;,
     <span class="doccomment">/// The theme name of the level.
-    </span><span class="kw">pub </span>theme: String,
+    </span><span class="kw">pub </span>theme: Theme,
     <span class="doccomment">/// The custom background color of the level.
     </span><span class="kw">pub </span>custom_background_color: Color,
 
@@ -395,7 +396,6 @@
             nova_level: <span class="bool-val">true</span>,
             color_palette: <span class="prelude-val">Some</span>(Vec::default()),
             laps: <span class="number">1</span>,
-            theme: <span class="string">"mountains"</span>.to_string(),
             default_music: <span class="bool-val">true</span>,
             gravity: Vec2 { x: <span class="number">0.0</span>, y: -<span class="number">75.0 </span>},
             ..Default::default()

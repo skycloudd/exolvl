@@ -63,6 +63,9 @@
 <a href="#63" id="63">63</a>
 <a href="#64" id="64">64</a>
 <a href="#65" id="65">65</a>
+<a href="#66" id="66">66</a>
+<a href="#67" id="67">67</a>
+<a href="#68" id="68">68</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Errors that the library can return.
 
 /// Errors that the library can return while reading/writing the binary format.
@@ -80,6 +83,8 @@
     </span>InvalidOldActionType(i32),
     <span class="doccomment">/// The value of an `ActionType` is invalid.
     </span>InvalidActionType(i32),
+    <span class="doccomment">/// The theme is invalid.
+    </span>InvalidTheme(String),
     <span class="doccomment">/// An error occurred while reading a LEB128 value.
     </span>LebRead(leb128::read::Error),
     <span class="doccomment">/// An I/O error occurred while reading/writing to a file.
@@ -100,6 +105,7 @@
             }
             <span class="self">Self</span>::InvalidOldActionType(value) =&gt; <span class="macro">write!</span>(f, <span class="string">"invalid old action type: {value}"</span>),
             <span class="self">Self</span>::InvalidActionType(value) =&gt; <span class="macro">write!</span>(f, <span class="string">"invalid action type: {value}"</span>),
+            <span class="self">Self</span>::InvalidTheme(value) =&gt; <span class="macro">write!</span>(f, <span class="string">"invalid theme: {value}"</span>),
             <span class="self">Self</span>::LebRead(err) =&gt; <span class="macro">write!</span>(f, <span class="string">"{err}"</span>),
             <span class="self">Self</span>::Io(err) =&gt; <span class="macro">write!</span>(f, <span class="string">"{err}"</span>),
             <span class="attr">#[cfg(feature = <span class="string">"image"</span>)]
