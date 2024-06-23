@@ -1,6 +1,6 @@
 //! A collection of traits that allow for reading and writing values in the binary format.
 
-use crate::{private, Error};
+use crate::{error::Error, private};
 
 /// A trait for reading values from a binary exolvl file.
 ///
