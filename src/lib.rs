@@ -1014,7 +1014,7 @@ pub enum ObjectProperty {
     DamageFromDash(bool),
     ReverseDirOnDamage(bool),
     Floating(bool),
-    LinkedObjects(Vec::<i32>),
+    LinkedObjects(Vec<i32>),
     FlipX(bool),
     FlipY(bool),
     Text(String),
