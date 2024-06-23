@@ -550,9 +550,9 @@ pub struct LevelData {
     pub custom_terrain_border_thickness: f32,
     /// The corner radius of the terrain border.
     pub custom_terrain_border_corner_radius: f32,
-    /// Wether the copied terrain has round reflex angles or not (only visual).
+    /// Whether the copied terrain has round reflex angles or not (only visual).
     pub custom_terrain_round_reflex_angles: bool,
-    /// Wether the copied terrain has a round collider or not (not visual).
+    /// Whether the copied terrain has a round collider or not (not visual).
     pub custom_terrain_round_collider: bool,
     /// The friction of the copied terrain.
     pub custom_terrain_friction: f32,
