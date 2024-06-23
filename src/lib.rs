@@ -1092,7 +1092,7 @@ impl Read for ObjectProperty {
             26 => Self::Pattern(Read::read(input)?),
             27 => Self::PatternTiling(Read::read(input)?),
             28 => Self::PatternOffset(Read::read(input)?),
-            32 => Self::BorderThickness(Read::read(input)?),
+            32 => Self::Bounce(Read::read(input)?),
             34 => Self::RestoreVelocity(Read::read(input)?),
             35 => Self::Sprite(Read::read(input)?),
             36 => Self::Trigger(Read::read(input)?),
