@@ -2,6 +2,7 @@ pub mod action_type;
 pub mod author_replay;
 pub mod brush;
 pub mod color;
+pub mod dynamic_type;
 pub mod exolvl;
 pub mod image;
 pub mod layer;
