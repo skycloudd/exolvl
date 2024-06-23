@@ -3198,9 +3198,6 @@
 <a href="#3198" id="3198">3198</a>
 <a href="#3199" id="3199">3199</a>
 <a href="#3200" id="3200">3200</a>
-<a href="#3201" id="3201">3201</a>
-<a href="#3202" id="3202">3202</a>
-<a href="#3203" id="3203">3203</a>
 </pre></div><pre class="rust"><code><span class="attr">#![forbid(unsafe_code)]
 #![warn(clippy::pedantic)]
 #![warn(clippy::nursery)]
@@ -3492,72 +3489,72 @@
 <span class="kw">impl </span>Default <span class="kw">for </span>Exolvl {
     <span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
         <span class="kw">let </span>level_id = uuid::Uuid::new_v4();
-        <span class="self">Self </span>{ 
-            local_level: LocalLevel { 
-                serialization_version: <span class="number">18</span>, 
-                level_id: level_id.clone(),
+        <span class="self">Self </span>{
+            local_level: LocalLevel {
+                serialization_version: <span class="number">18</span>,
+                level_id,
                 level_version: <span class="number">1</span>,
                 level_name: <span class="string">"New level"</span>.to_string(),
-                thumbnail: <span class="string">""</span>.to_string(),
+                thumbnail: String::default(),
                 creation_date: chrono::Utc::now(),
                 update_date: chrono::Utc::now(),
                 author_time: Default::default(),
-                author_lap_times: Default::default(),
+                author_lap_times: Vec::default(),
                 silver_medal_time: Default::default(),
                 gold_medal_time: Default::default(),
                 laps: <span class="number">1</span>,
                 private: Default::default(),
                 nova_level: <span class="bool-val">true</span>,
-            }, 
-            level_data: LevelData { 
-                level_id: level_id,
+            },
+            level_data: LevelData {
+                level_id,
                 level_version: <span class="number">1</span>,
                 nova_level: <span class="bool-val">true</span>,
-                under_decoration_tiles: Default::default(),
-                background_decoration_tiles: Default::default(),
-                terrain_tiles: Default::default(),
-                floating_zone_tiles: Default::default(),
-                object_tiles: Default::default(),
-                foreground_decoration_tiles: Default::default(),
-                objects: Default::default(),
-                layers: Default::default(),
-                prefabs: Default::default(),
-                brushes: Default::default(),
-                patterns: Default::default(),
-                colour_palette: <span class="prelude-val">Some</span>(Default::default()),
+                under_decoration_tiles: Vec::default(),
+                background_decoration_tiles: Vec::default(),
+                terrain_tiles: Vec::default(),
+                floating_zone_tiles: Vec::default(),
+                object_tiles: Vec::default(),
+                foreground_decoration_tiles: Vec::default(),
+                objects: Vec::default(),
+                layers: Vec::default(),
+                prefabs: Vec::default(),
+                brushes: Vec::default(),
+                patterns: Vec::default(),
+                colour_palette: <span class="prelude-val">Some</span>(Vec::default()),
                 author_time: Default::default(),
-                author_lap_times: Default::default(),
+                author_lap_times: Vec::default(),
                 silver_medal_time: Default::default(),
                 gold_medal_time: Default::default(),
                 laps: <span class="number">1</span>,
                 center_camera: Default::default(),
-                scripts: Default::default(),
-                nova_scripts: Default::default(),
-                global_variables: Default::default(),
+                scripts: Vec::default(),
+                nova_scripts: Vec::default(),
+                global_variables: Vec::default(),
                 theme: <span class="string">"mountains"</span>.to_string(),
-                custom_background_colour: Default::default(),
+                custom_background_colour: Colour::default(),
                 unknown1: [<span class="number">0</span>; <span class="number">4</span>],
                 custom_terrain_pattern_id: Default::default(),
-                custom_terrain_pattern_tiling: Default::default(),
-                custom_terrain_pattern_offset: Default::default(),
-                custom_terrain_colour: Default::default(),
-                custom_terrain_secondary_color: Default::default(),
+                custom_terrain_pattern_tiling: Vec2::default(),
+                custom_terrain_pattern_offset: Vec2::default(),
+                custom_terrain_colour: Colour::default(),
+                custom_terrain_secondary_color: Colour::default(),
                 custom_terrain_blend_mode: Default::default(),
-                custom_terrain_border_colour: Default::default(),
+                custom_terrain_border_colour: Colour::default(),
                 custom_terrain_border_thickness: Default::default(),
                 custom_terrain_border_corner_radius: Default::default(),
                 custom_terrain_round_reflex_angles: Default::default(),
                 custom_terrain_round_collider: Default::default(),
                 custom_terrain_friction: Default::default(),
                 default_music: <span class="bool-val">true</span>,
-                music_ids: Default::default(),
+                music_ids: Vec::default(),
                 allow_direction_change: Default::default(),
                 disable_replays: Default::default(),
                 disable_revive_pads: Default::default(),
                 disable_start_animation: Default::default(),
-                gravity: Vec2 { x: <span class="number">0.0</span>, y: -<span class="number">75.0 </span>} 
+                gravity: Vec2 { x: <span class="number">0.0</span>, y: -<span class="number">75.0 </span>},
             },
-            author_replay: AuthorReplay(Default::default()),
+            author_replay: AuthorReplay(Vec::default()),
         }
     }
 }
@@ -3568,7 +3565,7 @@
 #[derive(Clone, Debug, Hash)]
 </span><span class="kw">pub struct </span>LocalLevel {
     <span class="doccomment">/// The version of the exolvl format that this level uses.
-    /// 
+    ///
     /// The current latest serialization version is 18.
     </span><span class="kw">pub </span>serialization_version: i32,
     <span class="doccomment">/// The UUID of the level.
@@ -3671,8 +3668,8 @@
     </span><span class="kw">pub </span>level_version: i32,
     <span class="doccomment">/// Whether this level is for the new level editor.
     ///
-    /// If this is true, the level can be opened in the new level editor. Otherwise it's for the "legacy" editor. 
-    /// This Field is presumably only useful in .level files, not in .exolvl ones. A mismatch with the corresponding LocalLevel field should be avoided.
+    /// If this is true, the level can be opened in the new level editor. Otherwise it's for the "legacy" editor.
+    /// This Field is presumably only useful in .level files, not in .exolvl ones. A mismatch with the corresponding `LocalLevel` field should be avoided.
     </span><span class="kw">pub </span>nova_level: bool,
     <span class="doccomment">/// The tile ids for the "under decoration" layer.
     </span><span class="kw">pub </span>under_decoration_tiles: Vec&lt;i32&gt;,
@@ -3732,8 +3729,8 @@
     <span class="doccomment">/// Unknown data.
     </span>unknown1: [u8; <span class="number">4</span>],
     <span class="doccomment">/// The following terrain related fields are all used when explicitly copying certain terrain data.
-    /// 
-    /// The custom terrain pattern that can be pasted with the colour_paste button if the recieving object has the FillMode set to `Pattern`.
+    ///
+    /// The custom terrain pattern that can be pasted with the `colour_paste` button if the recieving object has the `FillMode` set to `Pattern`.
     </span><span class="kw">pub </span>custom_terrain_pattern_id: i32,
     <span class="doccomment">/// The tiling of that pattern.
     </span><span class="kw">pub </span>custom_terrain_pattern_tiling: Vec2,
@@ -3767,7 +3764,7 @@
     </span><span class="kw">pub </span>allow_direction_change: bool,
     <span class="doccomment">/// Whether replays are disabled or not.
     ///
-    /// If this is true, the game won't upload replays on this level. 
+    /// If this is true, the game won't upload replays on this level.
     /// (unless you explicitly upload blank shells from the history section, that only contain the time you set without any replay data. Could be a bug).
     </span><span class="kw">pub </span>disable_replays: bool,
     <span class="doccomment">/// Whether revive pads are disabled or not.
@@ -4060,10 +4057,7 @@
 
 <span class="kw">impl </span>Default <span class="kw">for </span>Vec2 {
     <span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
-        <span class="self">Self </span>{
-            x: <span class="number">0.0</span>,
-            y: <span class="number">0.0</span>,
-        }
+        <span class="self">Self </span>{ x: <span class="number">0.0</span>, y: <span class="number">0.0 </span>}
     }
 }
 
@@ -4782,9 +4776,10 @@
 
 <span class="kw">impl </span>Read <span class="kw">for </span>Script {
     <span class="kw">fn </span>read(input: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>std::io::Read) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, Error&gt;
-        <span class="kw">where
-            </span><span class="self">Self</span>: Sized {
-        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{ 
+    <span class="kw">where
+        </span><span class="self">Self</span>: Sized,
+    {
+        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
             script_id: Read::read(input)<span class="question-mark">?</span>,
             name: Read::read(input)<span class="question-mark">?</span>,
             creation_date: Read::read(input)<span class="question-mark">?</span>,
@@ -4812,9 +4807,10 @@
 
 <span class="kw">impl </span>Read <span class="kw">for </span>OldAction {
     <span class="kw">fn </span>read(input: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>std::io::Read) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, Error&gt;
-        <span class="kw">where
-            </span><span class="self">Self</span>: Sized {
-        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{ 
+    <span class="kw">where
+        </span><span class="self">Self</span>: Sized,
+    {
+        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
             action_type: Read::read(input)<span class="question-mark">?</span>,
             wait: Read::read(input)<span class="question-mark">?</span>,
             properties: Read::read(input)<span class="question-mark">?</span>,
@@ -4913,9 +4909,10 @@
 
 <span class="kw">impl </span>Read <span class="kw">for </span>OldActionProperty {
     <span class="kw">fn </span>read(input: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>std::io::Read) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, Error&gt;
-        <span class="kw">where
-            </span><span class="self">Self</span>: Sized {
-        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{ 
+    <span class="kw">where
+        </span><span class="self">Self</span>: Sized,
+    {
+        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
             name: Read::read(input)<span class="question-mark">?</span>,
             value: Read::read(input)<span class="question-mark">?</span>,
         })
@@ -5234,15 +5231,15 @@
         actions: Vec&lt;Action&gt;,
     },
     StopSound {
-        sound_instance: NovaValue, 
-        fade_out: NovaValue
+        sound_instance: NovaValue,
+        fade_out: NovaValue,
     },
     PlayParticleSystem {
-        target_objects: NovaValue
+        target_objects: NovaValue,
     },
     StopParticleSystem {
-        target_objects: NovaValue, 
-        clear: NovaValue
+        target_objects: NovaValue,
+        clear: NovaValue,
     },
 }
 
@@ -5537,18 +5534,18 @@
                 target_objects: Read::read(input)<span class="question-mark">?</span>,
                 actions: Read::read(input)<span class="question-mark">?</span>,
             },
-            <span class="number">50 </span>=&gt; <span class="self">Self</span>::StopSound { 
+            <span class="number">50 </span>=&gt; <span class="self">Self</span>::StopSound {
                 sound_instance: Read::read(input)<span class="question-mark">?</span>,
                 fade_out: Read::read(input)<span class="question-mark">?</span>,
             },
-            <span class="number">51 </span>=&gt; <span class="self">Self</span>::PlayParticleSystem { 
-                target_objects: Read::read(input)<span class="question-mark">?</span>, 
+            <span class="number">51 </span>=&gt; <span class="self">Self</span>::PlayParticleSystem {
+                target_objects: Read::read(input)<span class="question-mark">?</span>,
             },
-            <span class="number">52 </span>=&gt; <span class="self">Self</span>::StopParticleSystem { 
+            <span class="number">52 </span>=&gt; <span class="self">Self</span>::StopParticleSystem {
                 target_objects: Read::read(input)<span class="question-mark">?</span>,
                 clear: Read::read(input)<span class="question-mark">?</span>,
             },
-            
+
             n =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::InvalidActionType(n)),
         })
     }
@@ -5638,7 +5635,8 @@
             <span class="self">Self</span>::ResetObject { target_objects }
             | <span class="self">Self</span>::Activate { target_objects }
             | <span class="self">Self</span>::Deactivate { target_objects }
-            | <span class="self">Self</span>::Kill { target_objects } =&gt; target_objects.write(output),
+            | <span class="self">Self</span>::Kill { target_objects }
+            | <span class="self">Self</span>::PlayParticleSystem { target_objects } =&gt; target_objects.write(output),
             <span class="self">Self</span>::SetColor {
                 target_objects,
                 colour,
@@ -5892,21 +5890,16 @@
                 target_objects.write(output)<span class="question-mark">?</span>;
                 actions.write(output)
             }
-            <span class="self">Self</span>::StopSound { 
+            <span class="self">Self</span>::StopSound {
                 sound_instance,
-                fade_out 
+                fade_out,
             } =&gt; {
                 sound_instance.write(output)<span class="question-mark">?</span>;
                 fade_out.write(output)
             }
-            <span class="self">Self</span>::PlayParticleSystem { 
-                target_objects 
-            } =&gt; {
-                target_objects.write(output)
-            }
-            <span class="self">Self</span>::StopParticleSystem { 
-                target_objects, 
-                clear 
+            <span class="self">Self</span>::StopParticleSystem {
+                target_objects,
+                clear,
             } =&gt; {
                 target_objects.write(output)<span class="question-mark">?</span>;
                 clear.write(output)
@@ -6393,9 +6386,10 @@
 
 <span class="kw">impl </span>Read <span class="kw">for </span>Uuid {
     <span class="kw">fn </span>read(input: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>std::io::Read) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, Error&gt;
-        <span class="kw">where
-            </span><span class="self">Self</span>: Sized {
-        <span class="prelude-val">Ok</span>(uuid::Uuid::parse_str(<span class="kw-2">&amp;</span>String::read(input)<span class="question-mark">?</span>).unwrap())
+    <span class="kw">where
+        </span><span class="self">Self</span>: Sized,
+    {
+        <span class="prelude-val">Ok</span>(<span class="self">Self</span>::parse_str(<span class="kw-2">&amp;</span>String::read(input)<span class="question-mark">?</span>).unwrap())
     }
 }
 
