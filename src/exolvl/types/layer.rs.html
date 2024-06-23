@@ -44,11 +44,13 @@
 <a href="#44" id="44">44</a>
 <a href="#45" id="45">45</a>
 <a href="#46" id="46">46</a>
+<a href="#47" id="47">47</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">super</span>::vec2::Vec2;
 <span class="kw">use crate</span>::{error::Error, Read, Write};
 
 <span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug)]
+#[allow(clippy::struct_excessive_bools)]
 </span><span class="kw">pub struct </span>Layer {
     <span class="kw">pub </span>layer_id: i32,
     <span class="kw">pub </span>layer_name: String,

@@ -502,6 +502,7 @@
 <a href="#502" id="502">502</a>
 <a href="#503" id="503">503</a>
 <a href="#504" id="504">504</a>
+<a href="#505" id="505">505</a>
 </pre></div><pre class="rust"><code><span class="kw">use super</span>::{color::Colour, vec2::Vec2};
 <span class="kw">use crate</span>::{error::Error, Read, Write};
 
@@ -681,7 +682,8 @@
 }
 
 <span class="kw">impl </span>Write <span class="kw">for </span>ObjectProperty {
-    <span class="kw">fn </span>write(<span class="kw-2">&amp;</span><span class="self">self</span>, output: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>std::io::Write) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
+    <span class="attr">#[allow(clippy::too_many_lines)]
+    </span><span class="kw">fn </span>write(<span class="kw-2">&amp;</span><span class="self">self</span>, output: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>std::io::Write) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
         <span class="kw">match </span><span class="self">self </span>{
             <span class="self">Self</span>::Colour(value) =&gt; {
                 <span class="number">0</span>.write(output)<span class="question-mark">?</span>;
