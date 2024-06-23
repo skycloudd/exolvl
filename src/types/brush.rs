@@ -1,12 +1,14 @@
+use ordered_float::OrderedFloat;
+
 use super::{object_property::ObjectProperty, vec2::Vec2};
 use crate::{error::Error, Read, Write};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Brush {
     pub brush_id: i32,
     pub spread: Vec2,
-    pub frequency: f32,
+    pub frequency: OrderedFloat<f32>,
     pub grid: BrushGrid,
     pub objects: Vec<BrushObject>,
 }
@@ -34,14 +36,14 @@ impl Write for Brush {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 #[allow(clippy::module_name_repetitions)]
 pub struct BrushObject {
     pub entity_id: i32,
     pub properties: Vec<ObjectProperty>,
-    pub weight: f32,
-    pub scale: f32,
-    pub rotation: f32,
+    pub weight: OrderedFloat<f32>,
+    pub scale: OrderedFloat<f32>,
+    pub rotation: OrderedFloat<f32>,
     pub flip_x: bool,
     pub flip_y: bool,
 }

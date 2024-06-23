@@ -1,12 +1,13 @@
 use crate::{error::Error, Read, Write};
+use ordered_float::OrderedFloat;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Color {
-    pub r: f32,
-    pub g: f32,
-    pub b: f32,
-    pub a: f32,
+    pub r: OrderedFloat<f32>,
+    pub g: OrderedFloat<f32>,
+    pub b: OrderedFloat<f32>,
+    pub a: OrderedFloat<f32>,
 }
 
 impl Read for Color {

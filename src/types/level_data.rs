@@ -10,11 +10,12 @@ use super::{
     vec2::Vec2,
 };
 use crate::{error::Error, Read, ReadVersioned, Write};
+use ordered_float::OrderedFloat;
 use uuid::Uuid;
 
 /// The level data for an Exoracer level.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct LevelData {
     /// The UUID of the level.
@@ -102,15 +103,15 @@ pub struct LevelData {
     /// The custom terrain border color of the level.
     pub custom_terrain_border_color: Color,
     /// The thickness of the terrain border.
-    pub custom_terrain_border_thickness: f32,
+    pub custom_terrain_border_thickness: OrderedFloat<f32>,
     /// The corner radius of the terrain border.
-    pub custom_terrain_border_corner_radius: f32,
+    pub custom_terrain_border_corner_radius: OrderedFloat<f32>,
     /// Whether the copied terrain has round reflex angles or not (only visual).
     pub custom_terrain_round_reflex_angles: bool,
     /// Whether the copied terrain has a round collider or not (not visual).
     pub custom_terrain_round_collider: bool,
     /// The friction of the copied terrain.
-    pub custom_terrain_friction: f32,
+    pub custom_terrain_friction: OrderedFloat<f32>,
     /// Whether the default music should be played or not.
     pub default_music: bool,
     /// The music ids for the level. The game randomly picks one of these to play each time.
@@ -140,7 +141,10 @@ impl LevelData {
             color_palette: Some(Vec::default()),
             laps: 1,
             default_music: true,
-            gravity: Vec2 { x: 0.0, y: -75.0 },
+            gravity: Vec2 {
+                x: OrderedFloat(0.0),
+                y: OrderedFloat(-75.0),
+            },
             ..Default::default()
         }
     }

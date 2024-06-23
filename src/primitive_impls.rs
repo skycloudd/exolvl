@@ -1,5 +1,6 @@
 use crate::{error::Error, types::varint::Varint, Read, Write};
 use cs_datetime_parse::DateTimeCs;
+use ordered_float::OrderedFloat;
 use uuid::Uuid;
 
 impl Read for String {
@@ -237,5 +238,17 @@ impl Read for Uuid {
 impl Write for Uuid {
     fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         self.to_string().write(output)
+    }
+}
+
+impl Read for OrderedFloat<f32> {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
+        Ok(Self(f32::read(input)?))
+    }
+}
+
+impl Write for OrderedFloat<f32> {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
+        self.0.write(output)
     }
 }

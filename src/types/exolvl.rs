@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 /// A full Exoracer level.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Exolvl {
     /// The local level data for this level.
     pub local_level: LocalLevel,

@@ -25,7 +25,8 @@ use crate::types::{
 };
 use chrono::{DateTime, Utc};
 #[cfg(feature = "image")]
-use image::DynamicImage;
+use image::{DynamicImage, RgbaImage};
+use ordered_float::OrderedFloat;
 use uuid::Uuid;
 
 pub trait Sealed {}
@@ -80,11 +81,15 @@ impl_sealed!(
     Activator,
     Parameter,
     Uuid,
-    Theme
+    Theme,
+    OrderedFloat<f32>,
 );
 
 #[cfg(feature = "image")]
 impl Sealed for DynamicImage {}
+
+#[cfg(feature = "image")]
+impl Sealed for RgbaImage {}
 
 impl<T> Sealed for Vec<T> {}
 impl<T, const LEN: usize> Sealed for [T; LEN] {}

@@ -1,7 +1,7 @@
 use crate::{error::Error, types::action_type::ActionType, Read, ReadContext, Write};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Action {
     pub closed: bool,
     pub wait: bool,

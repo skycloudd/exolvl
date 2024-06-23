@@ -5,7 +5,7 @@ use uuid::Uuid;
 ///
 /// This data is only ever used in the level editor and is not uploaded to the server.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, Default, Hash)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct LocalLevel {
     /// The version of the exolvl format that this level uses.
     ///

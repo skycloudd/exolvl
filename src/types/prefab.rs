@@ -2,7 +2,7 @@ use super::{image::Image, object::Object};
 use crate::{error::Error, Read, Write};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Prefab {
     pub prefab_id: i32,
     pub prefab_image_data: Image,

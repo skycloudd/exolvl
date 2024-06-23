@@ -3,15 +3,16 @@ use crate::{
     types::{color::Color, dynamic_type::DynamicType, vec2::Vec2},
     Read, Write,
 };
+use ordered_float::OrderedFloat;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct NovaValue {
     pub dynamic_type: DynamicType,
 
     pub bool_value: bool,
     pub int_value: i32,
-    pub float_value: f32,
+    pub float_value: OrderedFloat<f32>,
     pub string_value: Option<String>,
     pub color_value: Color,
     pub vector_value: Vec2,

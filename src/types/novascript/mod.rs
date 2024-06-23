@@ -13,7 +13,7 @@ pub mod static_type;
 pub mod variable;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct NovaScript {
     pub script_id: i32,
     pub script_name: String,

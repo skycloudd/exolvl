@@ -5,7 +5,7 @@ use super::{
 use crate::{error::Error, Read, ReadContext, Write};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ActionType {
     Repeat {
         actions: Vec<Action>,

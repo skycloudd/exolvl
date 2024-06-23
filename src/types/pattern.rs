@@ -2,7 +2,7 @@ use super::image::Image;
 use crate::{error::Error, Read, Write};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Pattern {
     pub pattern_id: i32,
     pub pattern_frames: Vec<Image>,
