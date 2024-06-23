@@ -231,7 +231,16 @@
 <a href="#231" id="231">231</a>
 <a href="#232" id="232">232</a>
 <a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
+<a href="#235" id="235">235</a>
+<a href="#236" id="236">236</a>
+<a href="#237" id="237">237</a>
+<a href="#238" id="238">238</a>
+<a href="#239" id="239">239</a>
+<a href="#240" id="240">240</a>
+<a href="#241" id="241">241</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{error::Error, types::varint::Varint, Read, Write};
+<span class="kw">use </span>cs_datetime_parse::DateTimeCs;
 <span class="kw">use </span>uuid::Uuid;
 
 <span class="kw">impl </span>Read <span class="kw">for </span>String {
@@ -251,7 +260,7 @@
 
 <span class="kw">impl </span>Write <span class="kw">for </span>String {
     <span class="kw">fn </span>write(<span class="kw-2">&amp;</span><span class="self">self</span>, output: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>std::io::Write) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
-        Varint(i32::try_from(<span class="self">self</span>.len()).unwrap()).write(output)<span class="question-mark">?</span>;
+        Varint(u64::try_from(<span class="self">self</span>.len()).unwrap()).write(output)<span class="question-mark">?</span>;
 
         <span class="kw">for </span>c <span class="kw">in </span><span class="self">self</span>.chars() {
             (c <span class="kw">as </span>u8).write(output)<span class="question-mark">?</span>;
@@ -263,7 +272,7 @@
 
 <span class="kw">impl </span>Write <span class="kw">for </span><span class="kw-2">&amp;</span>str {
     <span class="kw">fn </span>write(<span class="kw-2">&amp;</span><span class="self">self</span>, output: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>std::io::Write) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
-        Varint(i32::try_from(<span class="self">self</span>.len()).unwrap()).write(output)<span class="question-mark">?</span>;
+        Varint(u64::try_from(<span class="self">self</span>.len()).unwrap()).write(output)<span class="question-mark">?</span>;
 
         <span class="kw">for </span>c <span class="kw">in </span><span class="self">self</span>.chars() {
             (c <span class="kw">as </span>u8).write(output)<span class="question-mark">?</span>;
@@ -429,24 +438,31 @@
     }
 }
 
-<span class="kw">const </span>TICKS_TO_SECONDS: i64 = <span class="number">10_000_000</span>;
-<span class="kw">const </span>EPOCH_DIFFERENCE: i64 = <span class="number">62_135_596_800</span>;
-
 <span class="kw">impl </span>Read <span class="kw">for </span>chrono::DateTime&lt;chrono::Utc&gt; {
     <span class="kw">fn </span>read(input: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>std::io::Read) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, Error&gt; {
         <span class="kw">let </span>ticks = i64::read(input)<span class="question-mark">?</span>;
+        <span class="kw">let </span>parsed = DateTimeCs::from_binary(ticks).unwrap();
 
-        <span class="kw">let </span>seconds = ticks / TICKS_TO_SECONDS - EPOCH_DIFFERENCE;
+        <span class="kw">let </span>DateTimeCs::Utc(datetime) = parsed <span class="kw">else </span>{
+            <span class="macro">panic!</span>(<span class="string">"datetime must be utc"</span>)
+        };
 
-        <span class="prelude-val">Ok</span>(<span class="self">Self</span>::from_timestamp(seconds, <span class="number">0</span>).unwrap())
+        <span class="prelude-val">Ok</span>(<span class="self">Self</span>::from_timestamp_nanos(
+            datetime.unix_timestamp_nanos().try_into().unwrap(),
+        ))
     }
 }
 
 <span class="kw">impl </span>Write <span class="kw">for </span>chrono::DateTime&lt;chrono::Utc&gt; {
     <span class="kw">fn </span>write(<span class="kw-2">&amp;</span><span class="self">self</span>, output: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>std::io::Write) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
-        <span class="kw">let </span>ticks = (<span class="self">self</span>.timestamp() + EPOCH_DIFFERENCE) * TICKS_TO_SECONDS;
+        <span class="kw">let </span>datetime = time::OffsetDateTime::from_unix_timestamp_nanos(
+            <span class="self">self</span>.timestamp_nanos_opt().unwrap().into(),
+        )
+        .unwrap();
 
-        ticks.write(output)
+        <span class="kw">let </span>datetime = DateTimeCs::Utc(datetime);
+
+        datetime.to_binary().unwrap().write(output)
     }
 }
 

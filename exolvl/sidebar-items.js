@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["error","types"],"trait":["Read","ReadContext","ReadVersioned","Write"]};
+window.SIDEBAR_ITEMS = {"mod":["error","gzip","types"],"trait":["Read","ReadContext","ReadVersioned","Write"]};

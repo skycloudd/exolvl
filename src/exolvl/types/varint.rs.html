@@ -23,19 +23,19 @@
 
 <span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-</span><span class="kw">pub struct </span>Varint(<span class="kw">pub </span>i32);
+</span><span class="kw">pub struct </span>Varint(<span class="kw">pub </span>u64);
 
 <span class="kw">impl </span>Read <span class="kw">for </span>Varint {
     <span class="kw">fn </span>read(input: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>std::io::Read) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, Error&gt; {
-        <span class="kw">let </span>value = leb128::read::signed(input)<span class="question-mark">?</span>;
+        <span class="kw">let </span>value = leb128::read::unsigned(input)<span class="question-mark">?</span>;
 
-        <span class="prelude-val">Ok</span>(<span class="self">Self</span>(value.try_into().unwrap()))
+        <span class="prelude-val">Ok</span>(<span class="self">Self</span>(value))
     }
 }
 
 <span class="kw">impl </span>Write <span class="kw">for </span>Varint {
     <span class="kw">fn </span>write(<span class="kw-2">&amp;</span><span class="self">self</span>, output: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>std::io::Write) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
-        leb128::write::signed(output, <span class="self">self</span>.<span class="number">0</span>.into())<span class="question-mark">?</span>;
+        leb128::write::unsigned(output, <span class="self">self</span>.<span class="number">0</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(())
     }
