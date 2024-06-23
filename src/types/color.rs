@@ -2,14 +2,14 @@ use crate::{error::Error, Read, Write};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Copy, Debug, Default)]
-pub struct Colour {
+pub struct Color {
     pub r: f32,
     pub g: f32,
     pub b: f32,
     pub a: f32,
 }
 
-impl Read for Colour {
+impl Read for Color {
     fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
             r: Read::read(input)?,
@@ -20,7 +20,7 @@ impl Read for Colour {
     }
 }
 
-impl Write for Colour {
+impl Write for Color {
     fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         self.r.write(output)?;
         self.g.write(output)?;

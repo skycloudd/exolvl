@@ -67,7 +67,7 @@ pub enum ActionType {
     },
     SetColor {
         target_objects: NovaValue,
-        colour: NovaValue,
+        color: NovaValue,
         channel: NovaValue,
         duration: NovaValue,
         easing: NovaValue,
@@ -81,7 +81,7 @@ pub enum ActionType {
     },
     SetSecondaryColor {
         target_objects: NovaValue,
-        colour: NovaValue,
+        color: NovaValue,
         duration: NovaValue,
         easing: NovaValue,
     },
@@ -93,7 +93,7 @@ pub enum ActionType {
     },
     SetBorderColor {
         target_objects: NovaValue,
-        colour: NovaValue,
+        color: NovaValue,
         duration: NovaValue,
         easing: NovaValue,
     },
@@ -205,13 +205,13 @@ pub enum ActionType {
     },
     TransitionIn {
         type_: NovaValue,
-        colour: NovaValue,
+        color: NovaValue,
         duration: NovaValue,
         easing: NovaValue,
     },
     TransitionOut {
         type_: NovaValue,
-        colour: NovaValue,
+        color: NovaValue,
         duration: NovaValue,
         easing: NovaValue,
     },
@@ -372,7 +372,7 @@ impl ReadContext for ActionType {
             },
             12 => Self::SetColor {
                 target_objects: Read::read(input)?,
-                colour: Read::read(input)?,
+                color: Read::read(input)?,
                 channel: Read::read(input)?,
                 duration: Read::read(input)?,
                 easing: Read::read(input)?,
@@ -386,7 +386,7 @@ impl ReadContext for ActionType {
             },
             14 => Self::SetSecondaryColor {
                 target_objects: Read::read(input)?,
-                colour: Read::read(input)?,
+                color: Read::read(input)?,
                 duration: Read::read(input)?,
                 easing: Read::read(input)?,
             },
@@ -398,7 +398,7 @@ impl ReadContext for ActionType {
             },
             16 => Self::SetBorderColor {
                 target_objects: Read::read(input)?,
-                colour: Read::read(input)?,
+                color: Read::read(input)?,
                 duration: Read::read(input)?,
                 easing: Read::read(input)?,
             },
@@ -510,13 +510,13 @@ impl ReadContext for ActionType {
             },
             44 => Self::TransitionIn {
                 type_: Read::read(input)?,
-                colour: Read::read(input)?,
+                color: Read::read(input)?,
                 duration: Read::read(input)?,
                 easing: Read::read(input)?,
             },
             45 => Self::TransitionOut {
                 type_: Read::read(input)?,
-                colour: Read::read(input)?,
+                color: Read::read(input)?,
                 duration: Read::read(input)?,
                 easing: Read::read(input)?,
             },
@@ -644,13 +644,13 @@ impl Write for ActionType {
             | Self::PlayParticleSystem { target_objects } => target_objects.write(output),
             Self::SetColor {
                 target_objects,
-                colour,
+                color,
                 channel,
                 duration,
                 easing,
             } => {
                 target_objects.write(output)?;
-                colour.write(output)?;
+                color.write(output)?;
                 channel.write(output)?;
                 duration.write(output)?;
                 easing.write(output)
@@ -670,12 +670,12 @@ impl Write for ActionType {
             }
             Self::SetSecondaryColor {
                 target_objects,
-                colour,
+                color,
                 duration,
                 easing,
             } => {
                 target_objects.write(output)?;
-                colour.write(output)?;
+                color.write(output)?;
                 duration.write(output)?;
                 easing.write(output)
             }
@@ -692,12 +692,12 @@ impl Write for ActionType {
             }
             Self::SetBorderColor {
                 target_objects,
-                colour,
+                color,
                 duration,
                 easing,
             } => {
                 target_objects.write(output)?;
-                colour.write(output)?;
+                color.write(output)?;
                 duration.write(output)?;
                 easing.write(output)
             }
@@ -847,23 +847,23 @@ impl Write for ActionType {
             Self::StopScript { script } => script.write(output),
             Self::TransitionIn {
                 type_,
-                colour,
+                color,
                 duration,
                 easing,
             } => {
                 type_.write(output)?;
-                colour.write(output)?;
+                color.write(output)?;
                 duration.write(output)?;
                 easing.write(output)
             }
             Self::TransitionOut {
                 type_,
-                colour,
+                color,
                 duration,
                 easing,
             } => {
                 type_.write(output)?;
-                colour.write(output)?;
+                color.write(output)?;
                 duration.write(output)?;
                 easing.write(output)
             }

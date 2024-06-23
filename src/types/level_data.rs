@@ -1,6 +1,6 @@
 use super::{
     brush::Brush,
-    color::Colour,
+    color::Color,
     layer::Layer,
     novascript::{variable::Variable, NovaScript},
     object::Object,
@@ -47,10 +47,10 @@ pub struct LevelData {
     pub brushes: Vec<Brush>,
     /// The patterns in the level.
     pub patterns: Vec<Pattern>,
-    /// The colour palettes in the level.
+    /// The color palettes in the level.
     ///
     /// This is only present in levels with version 17 or higher.
-    pub colour_palette: Option<Vec<Colour>>,
+    pub color_palette: Option<Vec<Color>>,
     /// The author medal time for this level in milliseconds.
     pub author_time: i64,
     /// The author medal lap times for this level in milliseconds.
@@ -77,29 +77,29 @@ pub struct LevelData {
     pub global_variables: Vec<Variable>,
     /// The theme name of the level.
     pub theme: String,
-    /// The custom background colour of the level.
-    pub custom_background_colour: Colour,
+    /// The custom background color of the level.
+    pub custom_background_color: Color,
 
     /// Unknown data.
     pub(crate) unknown1: [u8; 4],
     /// The following terrain related fields are all used when explicitly copying certain terrain data.
     ///
-    /// The custom terrain pattern that can be pasted with the `colour_paste` button if the recieving object has the `FillMode` set to `Pattern`.
+    /// The custom terrain pattern that can be pasted with the `color_paste` button if the recieving object has the `FillMode` set to `Pattern`.
     pub custom_terrain_pattern_id: i32,
     /// The tiling of that pattern.
     pub custom_terrain_pattern_tiling: Vec2,
     /// the offset of that pattern.
     pub custom_terrain_pattern_offset: Vec2,
-    /// In the legacy editor: The custom terrain colour of the level.
-    /// In the new editor: The colour of the copied terrain.
-    pub custom_terrain_colour: Colour,
+    /// In the legacy editor: The custom terrain color of the level.
+    /// In the new editor: The color of the copied terrain.
+    pub custom_terrain_color: Color,
     /// Not 100% sure of the use of this, presumably the replacement for the border color in the new editor.
     /// Used when copying and pasting properties of terrain.
-    pub custom_terrain_secondary_color: Colour,
+    pub custom_terrain_secondary_color: Color,
     /// The blend mode of the copied terrain.
     pub custom_terrain_blend_mode: i32,
-    /// The custom terrain border colour of the level.
-    pub custom_terrain_border_colour: Colour,
+    /// The custom terrain border color of the level.
+    pub custom_terrain_border_color: Color,
     /// The thickness of the terrain border.
     pub custom_terrain_border_thickness: f32,
     /// The corner radius of the terrain border.
@@ -136,7 +136,7 @@ impl LevelData {
             level_id,
             level_version: 1,
             nova_level: true,
-            colour_palette: Some(Vec::default()),
+            color_palette: Some(Vec::default()),
             laps: 1,
             theme: "mountains".to_string(),
             default_music: true,
@@ -163,7 +163,7 @@ impl ReadVersioned for LevelData {
             prefabs: Read::read(input)?,
             brushes: Read::read(input)?,
             patterns: Read::read(input)?,
-            colour_palette: if version >= 17 {
+            color_palette: if version >= 17 {
                 Some(Read::read(input)?)
             } else {
                 None
@@ -178,15 +178,15 @@ impl ReadVersioned for LevelData {
             nova_scripts: Read::read(input)?,
             global_variables: Read::read(input)?,
             theme: Read::read(input)?,
-            custom_background_colour: Read::read(input)?,
+            custom_background_color: Read::read(input)?,
             unknown1: Read::read(input)?,
             custom_terrain_pattern_id: Read::read(input)?,
             custom_terrain_pattern_tiling: Read::read(input)?,
             custom_terrain_pattern_offset: Read::read(input)?,
-            custom_terrain_colour: Read::read(input)?,
+            custom_terrain_color: Read::read(input)?,
             custom_terrain_secondary_color: Read::read(input)?,
             custom_terrain_blend_mode: Read::read(input)?,
-            custom_terrain_border_colour: Read::read(input)?,
+            custom_terrain_border_color: Read::read(input)?,
             custom_terrain_border_thickness: Read::read(input)?,
             custom_terrain_border_corner_radius: Read::read(input)?,
             custom_terrain_round_reflex_angles: Read::read(input)?,
@@ -219,8 +219,8 @@ impl Write for LevelData {
         self.prefabs.write(output)?;
         self.brushes.write(output)?;
         self.patterns.write(output)?;
-        if let Some(colour_palette) = &self.colour_palette {
-            colour_palette.write(output)?;
+        if let Some(color_palette) = &self.color_palette {
+            color_palette.write(output)?;
         }
         self.author_time.write(output)?;
         self.author_lap_times.write(output)?;
@@ -232,15 +232,15 @@ impl Write for LevelData {
         self.nova_scripts.write(output)?;
         self.global_variables.write(output)?;
         self.theme.write(output)?;
-        self.custom_background_colour.write(output)?;
+        self.custom_background_color.write(output)?;
         self.unknown1.write(output)?;
         self.custom_terrain_pattern_id.write(output)?;
         self.custom_terrain_pattern_tiling.write(output)?;
         self.custom_terrain_pattern_offset.write(output)?;
-        self.custom_terrain_colour.write(output)?;
+        self.custom_terrain_color.write(output)?;
         self.custom_terrain_secondary_color.write(output)?;
         self.custom_terrain_blend_mode.write(output)?;
-        self.custom_terrain_border_colour.write(output)?;
+        self.custom_terrain_border_color.write(output)?;
         self.custom_terrain_border_thickness.write(output)?;
         self.custom_terrain_border_corner_radius.write(output)?;
         self.custom_terrain_round_reflex_angles.write(output)?;

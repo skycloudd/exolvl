@@ -1,6 +1,6 @@
 use crate::{
     error::Error,
-    types::{color::Colour, dynamic_type::DynamicType, vec2::Vec2},
+    types::{color::Color, dynamic_type::DynamicType, vec2::Vec2},
     Read, Write,
 };
 
@@ -13,7 +13,7 @@ pub struct NovaValue {
     pub int_value: i32,
     pub float_value: f32,
     pub string_value: Option<String>,
-    pub color_value: Colour,
+    pub color_value: Color,
     pub vector_value: Vec2,
     pub int_list_value: Option<Vec<i32>>,
     pub sub_values: Option<Vec<NovaValue>>,

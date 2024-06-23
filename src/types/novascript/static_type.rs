@@ -34,7 +34,7 @@ define_static_type!(
     Int = 1,
     Float = 2,
     String = 3,
-    Colour = 4,
+    Color = 4,
     Vector = 5,
     Sound = 6,
     Music = 7,

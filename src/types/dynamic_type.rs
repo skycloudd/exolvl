@@ -221,10 +221,10 @@ define_dynamic_type!(
     BoolPointerDown = 188,
     BoolPointerHeld = 189,
     BoolPointerReleased = 190,
-    FloatColourR = 191,
-    FloatColourG = 192,
-    FloatColourB = 193,
-    FloatColourA = 194,
+    FloatColorR = 191,
+    FloatColorG = 192,
+    FloatColorB = 193,
+    FloatColorA = 194,
     StringSubstring = 195,
     IntStringLength = 196
 );

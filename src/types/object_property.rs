@@ -1,13 +1,13 @@
-use super::{color::Colour, vec2::Vec2};
+use super::{color::Color, vec2::Vec2};
 use crate::{error::Error, Read, Write};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug)]
 pub enum ObjectProperty {
-    Colour(Colour),
+    Color(Color),
     Resolution(i32),
     FillMode(i32),
-    SecondaryColour(Colour),
+    SecondaryColor(Color),
     Thickness(f32),
     TotalAngle(i32),
     Corners(i32),
@@ -16,7 +16,7 @@ pub enum ObjectProperty {
     CornerRadius(f32),
     Width(f32),
     Height(f32),
-    BorderColour(Colour),
+    BorderColor(Color),
     BorderThickness(f32),
     PhysicsType(i32),
     Friction(f32),
@@ -47,10 +47,10 @@ pub enum ObjectProperty {
     FlipY(bool),
     Text(String),
     FontSize(f32),
-    EditorColour(Colour),
-    Colour2(Colour),
-    Colour3(Colour),
-    Colour4(Colour),
+    EditorColor(Color),
+    Color2(Color),
+    Color3(Color),
+    Color4(Color),
     ParticleTexture(String),
     Duration(f32),
     Delay(f32),
@@ -77,9 +77,9 @@ pub enum ObjectProperty {
     RotationMin(f32),
     RotationMax(f32),
     Rotationspeed(f32),
-    ColourOverLifetime(bool),
-    StartColourMultiplier(Colour),
-    EndColourMultiplier(Colour),
+    ColorOverLifetime(bool),
+    StartColorMultiplier(Color),
+    EndColorMultiplier(Color),
     GravityMultiplier(f32),
     AnchorPos(Vec2),
     MoonInnerRadius(f32),
@@ -91,10 +91,10 @@ impl Read for ObjectProperty {
         let property_type = Read::read(input)?;
 
         Ok(match property_type {
-            0 => Self::Colour(Read::read(input)?),
+            0 => Self::Color(Read::read(input)?),
             1 => Self::Resolution(Read::read(input)?),
             2 => Self::FillMode(Read::read(input)?),
-            3 => Self::SecondaryColour(Read::read(input)?),
+            3 => Self::SecondaryColor(Read::read(input)?),
             4 => Self::Thickness(Read::read(input)?),
             5 => Self::TotalAngle(Read::read(input)?),
             6 => Self::Corners(Read::read(input)?),
@@ -103,7 +103,7 @@ impl Read for ObjectProperty {
             9 => Self::CornerRadius(Read::read(input)?),
             10 => Self::Width(Read::read(input)?),
             11 => Self::Height(Read::read(input)?),
-            12 => Self::BorderColour(Read::read(input)?),
+            12 => Self::BorderColor(Read::read(input)?),
             13 => Self::BorderThickness(Read::read(input)?),
             14 => Self::PhysicsType(Read::read(input)?),
             15 => Self::Friction(Read::read(input)?),
@@ -134,10 +134,10 @@ impl Read for ObjectProperty {
             44 => Self::FlipY(Read::read(input)?),
             45 => Self::Text(Read::read(input)?),
             46 => Self::FontSize(Read::read(input)?),
-            47 => Self::EditorColour(Read::read(input)?),
-            48 => Self::Colour2(Read::read(input)?),
-            49 => Self::Colour3(Read::read(input)?),
-            50 => Self::Colour4(Read::read(input)?),
+            47 => Self::EditorColor(Read::read(input)?),
+            48 => Self::Color2(Read::read(input)?),
+            49 => Self::Color3(Read::read(input)?),
+            50 => Self::Color4(Read::read(input)?),
             51 => Self::ParticleTexture(Read::read(input)?),
             52 => Self::Duration(Read::read(input)?),
             53 => Self::Delay(Read::read(input)?),
@@ -164,9 +164,9 @@ impl Read for ObjectProperty {
             75 => Self::RotationMin(Read::read(input)?),
             76 => Self::RotationMax(Read::read(input)?),
             77 => Self::Rotationspeed(Read::read(input)?),
-            78 => Self::ColourOverLifetime(Read::read(input)?),
-            79 => Self::StartColourMultiplier(Read::read(input)?),
-            80 => Self::EndColourMultiplier(Read::read(input)?),
+            78 => Self::ColorOverLifetime(Read::read(input)?),
+            79 => Self::StartColorMultiplier(Read::read(input)?),
+            80 => Self::EndColorMultiplier(Read::read(input)?),
             81 => Self::GravityMultiplier(Read::read(input)?),
             82 => Self::AnchorPos(Read::read(input)?),
             83 => Self::MoonInnerRadius(Read::read(input)?),
@@ -180,7 +180,7 @@ impl Write for ObjectProperty {
     #[allow(clippy::too_many_lines)]
     fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         match self {
-            Self::Colour(value) => {
+            Self::Color(value) => {
                 0.write(output)?;
                 value.write(output)
             }
@@ -192,7 +192,7 @@ impl Write for ObjectProperty {
                 2.write(output)?;
                 value.write(output)
             }
-            Self::SecondaryColour(value) => {
+            Self::SecondaryColor(value) => {
                 3.write(output)?;
                 value.write(output)
             }
@@ -228,7 +228,7 @@ impl Write for ObjectProperty {
                 11.write(output)?;
                 value.write(output)
             }
-            Self::BorderColour(value) => {
+            Self::BorderColor(value) => {
                 12.write(output)?;
                 value.write(output)
             }
@@ -352,19 +352,19 @@ impl Write for ObjectProperty {
                 46.write(output)?;
                 value.write(output)
             }
-            Self::EditorColour(value) => {
+            Self::EditorColor(value) => {
                 47.write(output)?;
                 value.write(output)
             }
-            Self::Colour2(value) => {
+            Self::Color2(value) => {
                 48.write(output)?;
                 value.write(output)
             }
-            Self::Colour3(value) => {
+            Self::Color3(value) => {
                 49.write(output)?;
                 value.write(output)
             }
-            Self::Colour4(value) => {
+            Self::Color4(value) => {
                 50.write(output)?;
                 value.write(output)
             }
@@ -472,15 +472,15 @@ impl Write for ObjectProperty {
                 77.write(output)?;
                 value.write(output)
             }
-            Self::ColourOverLifetime(value) => {
+            Self::ColorOverLifetime(value) => {
                 78.write(output)?;
                 value.write(output)
             }
-            Self::StartColourMultiplier(value) => {
+            Self::StartColorMultiplier(value) => {
                 79.write(output)?;
                 value.write(output)
             }
-            Self::EndColourMultiplier(value) => {
+            Self::EndColorMultiplier(value) => {
                 80.write(output)?;
                 value.write(output)
             }
