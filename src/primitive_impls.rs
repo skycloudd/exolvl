@@ -1,3 +1,5 @@
+use uuid::Uuid;
+
 use crate::{error::Error, types::varint::Varint, Read, Write};
 
 impl Read for String {
@@ -201,5 +203,20 @@ impl Write for chrono::DateTime<chrono::Utc> {
         let ticks = (self.timestamp() + EPOCH_DIFFERENCE) * TICKS_TO_SECONDS;
 
         ticks.write(output)
+    }
+}
+
+impl Read for Uuid {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error>
+    where
+        Self: Sized,
+    {
+        Ok(Self::parse_str(&String::read(input)?).unwrap())
+    }
+}
+
+impl Write for Uuid {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
+        self.to_string().write(output)
     }
 }

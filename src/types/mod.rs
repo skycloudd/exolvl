@@ -1,3 +1,4 @@
+pub mod action_type;
 pub mod author_replay;
 pub mod brush;
 pub mod color;

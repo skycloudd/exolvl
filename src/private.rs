@@ -1,4 +1,5 @@
 use crate::types::{
+    action_type::ActionType,
     author_replay::AuthorReplay,
     brush::{Brush, BrushGrid, BrushObject},
     color::Colour,
@@ -60,7 +61,7 @@ impl_sealed!(
     super::OldActionType,
     super::OldActionProperty,
     super::Action,
-    super::ActionType,
+    ActionType,
     super::NovaValue,
     super::DynamicType,
     super::FunctionCall,
