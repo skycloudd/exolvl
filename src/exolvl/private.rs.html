@@ -56,7 +56,14 @@
 <a href="#56" id="56">56</a>
 <a href="#57" id="57">57</a>
 <a href="#58" id="58">58</a>
+<a href="#59" id="59">59</a>
+<a href="#60" id="60">60</a>
+<a href="#61" id="61">61</a>
+<a href="#62" id="62">62</a>
+<a href="#63" id="63">63</a>
+<a href="#64" id="64">64</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>chrono::{DateTime, Utc};
+<span class="kw">use </span>uuid::Uuid;
 <span class="attr">#[cfg(feature = <span class="string">"image"</span>)]
 </span><span class="kw">use </span>image::DynamicImage;
 
@@ -95,7 +102,11 @@
     <span class="kw">super</span>::Brush,
     <span class="kw">super</span>::BrushObject,
     <span class="kw">super</span>::BrushGrid,
+    <span class="kw">super</span>::Script,
     <span class="kw">super</span>::NovaScript,
+    <span class="kw">super</span>::OldAction,
+    <span class="kw">super</span>::OldActionType,
+    <span class="kw">super</span>::OldActionProperty,
     <span class="kw">super</span>::Action,
     <span class="kw">super</span>::ActionType,
     <span class="kw">super</span>::NovaValue,
@@ -106,6 +117,7 @@
     <span class="kw">super</span>::StaticType,
     <span class="kw">super</span>::Activator,
     <span class="kw">super</span>::Parameter,
+    Uuid,
 );
 
 <span class="attr">#[cfg(feature = <span class="string">"image"</span>)]

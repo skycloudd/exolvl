@@ -60,6 +60,9 @@
 <a href="#60" id="60">60</a>
 <a href="#61" id="61">61</a>
 <a href="#62" id="62">62</a>
+<a href="#63" id="63">63</a>
+<a href="#64" id="64">64</a>
+<a href="#65" id="65">65</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Errors that the library can return.
 
 /// Errors that the library can return while reading/writing the binary format.
@@ -73,6 +76,8 @@
     </span>InvalidStaticType(i32),
     <span class="doccomment">/// The value of an `ObjectPropertyType` is invalid.
     </span>InvalidObjectPropertyType(i32),
+    <span class="doccomment">/// The value of an `OldActionType` is invalid.
+    </span>InvalidOldActionType(i32),
     <span class="doccomment">/// The value of an `ActionType` is invalid.
     </span>InvalidActionType(i32),
     <span class="doccomment">/// An error occurred while reading a LEB128 value.
@@ -93,6 +98,7 @@
             <span class="self">Self</span>::InvalidObjectPropertyType(value) =&gt; {
                 <span class="macro">write!</span>(f, <span class="string">"invalid object property type: {value}"</span>)
             }
+            <span class="self">Self</span>::InvalidOldActionType(value) =&gt; <span class="macro">write!</span>(f, <span class="string">"invalid old action type: {value}"</span>),
             <span class="self">Self</span>::InvalidActionType(value) =&gt; <span class="macro">write!</span>(f, <span class="string">"invalid action type: {value}"</span>),
             <span class="self">Self</span>::LebRead(err) =&gt; <span class="macro">write!</span>(f, <span class="string">"{err}"</span>),
             <span class="self">Self</span>::Io(err) =&gt; <span class="macro">write!</span>(f, <span class="string">"{err}"</span>),
