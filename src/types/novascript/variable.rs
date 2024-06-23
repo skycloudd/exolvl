@@ -1,5 +1,5 @@
-use super::nova_value::NovaValue;
-use crate::{error::Error, Read, StaticType, Write};
+use super::{nova_value::NovaValue, static_type::StaticType};
+use crate::{error::Error, Read, Write};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug)]

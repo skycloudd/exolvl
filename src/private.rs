@@ -11,7 +11,7 @@ use crate::types::{
     local_level::LocalLevel,
     novascript::{
         action::Action, activator::Activator, nova_value::NovaValue, parameter::Parameter,
-        variable::Variable, NovaScript,
+        static_type::StaticType, variable::Variable, NovaScript,
     },
     object::Object,
     object_property::ObjectProperty,
@@ -72,7 +72,7 @@ impl_sealed!(
     super::FunctionCall,
     super::CallParameter,
     Variable,
-    super::StaticType,
+    StaticType,
     Activator,
     Parameter,
     Uuid,

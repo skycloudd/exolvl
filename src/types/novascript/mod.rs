@@ -9,6 +9,7 @@ pub mod action;
 pub mod activator;
 pub mod nova_value;
 pub mod parameter;
+pub mod static_type;
 pub mod variable;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
