@@ -289,72 +289,72 @@ impl Write for Exolvl {
 impl Default for Exolvl {
     fn default() -> Self {
         let level_id = uuid::Uuid::new_v4();
-        Self { 
-            local_level: LocalLevel { 
-                serialization_version: 18, 
-                level_id: level_id.clone(),
+        Self {
+            local_level: LocalLevel {
+                serialization_version: 18,
+                level_id,
                 level_version: 1,
                 level_name: "New level".to_string(),
-                thumbnail: "".to_string(),
+                thumbnail: String::default(),
                 creation_date: chrono::Utc::now(),
                 update_date: chrono::Utc::now(),
                 author_time: Default::default(),
-                author_lap_times: Default::default(),
+                author_lap_times: Vec::default(),
                 silver_medal_time: Default::default(),
                 gold_medal_time: Default::default(),
                 laps: 1,
                 private: Default::default(),
                 nova_level: true,
-            }, 
-            level_data: LevelData { 
-                level_id: level_id,
+            },
+            level_data: LevelData {
+                level_id,
                 level_version: 1,
                 nova_level: true,
-                under_decoration_tiles: Default::default(),
-                background_decoration_tiles: Default::default(),
-                terrain_tiles: Default::default(),
-                floating_zone_tiles: Default::default(),
-                object_tiles: Default::default(),
-                foreground_decoration_tiles: Default::default(),
-                objects: Default::default(),
-                layers: Default::default(),
-                prefabs: Default::default(),
-                brushes: Default::default(),
-                patterns: Default::default(),
-                colour_palette: Some(Default::default()),
+                under_decoration_tiles: Vec::default(),
+                background_decoration_tiles: Vec::default(),
+                terrain_tiles: Vec::default(),
+                floating_zone_tiles: Vec::default(),
+                object_tiles: Vec::default(),
+                foreground_decoration_tiles: Vec::default(),
+                objects: Vec::default(),
+                layers: Vec::default(),
+                prefabs: Vec::default(),
+                brushes: Vec::default(),
+                patterns: Vec::default(),
+                colour_palette: Some(Vec::default()),
                 author_time: Default::default(),
-                author_lap_times: Default::default(),
+                author_lap_times: Vec::default(),
                 silver_medal_time: Default::default(),
                 gold_medal_time: Default::default(),
                 laps: 1,
                 center_camera: Default::default(),
-                scripts: Default::default(),
-                nova_scripts: Default::default(),
-                global_variables: Default::default(),
+                scripts: Vec::default(),
+                nova_scripts: Vec::default(),
+                global_variables: Vec::default(),
                 theme: "mountains".to_string(),
-                custom_background_colour: Default::default(),
+                custom_background_colour: Colour::default(),
                 unknown1: [0; 4],
                 custom_terrain_pattern_id: Default::default(),
-                custom_terrain_pattern_tiling: Default::default(),
-                custom_terrain_pattern_offset: Default::default(),
-                custom_terrain_colour: Default::default(),
-                custom_terrain_secondary_color: Default::default(),
+                custom_terrain_pattern_tiling: Vec2::default(),
+                custom_terrain_pattern_offset: Vec2::default(),
+                custom_terrain_colour: Colour::default(),
+                custom_terrain_secondary_color: Colour::default(),
                 custom_terrain_blend_mode: Default::default(),
-                custom_terrain_border_colour: Default::default(),
+                custom_terrain_border_colour: Colour::default(),
                 custom_terrain_border_thickness: Default::default(),
                 custom_terrain_border_corner_radius: Default::default(),
                 custom_terrain_round_reflex_angles: Default::default(),
                 custom_terrain_round_collider: Default::default(),
                 custom_terrain_friction: Default::default(),
                 default_music: true,
-                music_ids: Default::default(),
+                music_ids: Vec::default(),
                 allow_direction_change: Default::default(),
                 disable_replays: Default::default(),
                 disable_revive_pads: Default::default(),
                 disable_start_animation: Default::default(),
-                gravity: Vec2 { x: 0.0, y: -75.0 } 
+                gravity: Vec2 { x: 0.0, y: -75.0 },
             },
-            author_replay: AuthorReplay(Default::default()),
+            author_replay: AuthorReplay(Vec::default()),
         }
     }
 }
@@ -365,7 +365,7 @@ impl Default for Exolvl {
 #[derive(Clone, Debug, Hash)]
 pub struct LocalLevel {
     /// The version of the exolvl format that this level uses.
-    /// 
+    ///
     /// The current latest serialization version is 18.
     pub serialization_version: i32,
     /// The UUID of the level.
@@ -468,8 +468,8 @@ pub struct LevelData {
     pub level_version: i32,
     /// Whether this level is for the new level editor.
     ///
-    /// If this is true, the level can be opened in the new level editor. Otherwise it's for the "legacy" editor. 
-    /// This Field is presumably only useful in .level files, not in .exolvl ones. A mismatch with the corresponding LocalLevel field should be avoided.
+    /// If this is true, the level can be opened in the new level editor. Otherwise it's for the "legacy" editor.
+    /// This Field is presumably only useful in .level files, not in .exolvl ones. A mismatch with the corresponding `LocalLevel` field should be avoided.
     pub nova_level: bool,
     /// The tile ids for the "under decoration" layer.
     pub under_decoration_tiles: Vec<i32>,
@@ -529,8 +529,8 @@ pub struct LevelData {
     /// Unknown data.
     unknown1: [u8; 4],
     /// The following terrain related fields are all used when explicitly copying certain terrain data.
-    /// 
-    /// The custom terrain pattern that can be pasted with the colour_paste button if the recieving object has the FillMode set to `Pattern`.
+    ///
+    /// The custom terrain pattern that can be pasted with the `colour_paste` button if the recieving object has the `FillMode` set to `Pattern`.
     pub custom_terrain_pattern_id: i32,
     /// The tiling of that pattern.
     pub custom_terrain_pattern_tiling: Vec2,
@@ -564,7 +564,7 @@ pub struct LevelData {
     pub allow_direction_change: bool,
     /// Whether replays are disabled or not.
     ///
-    /// If this is true, the game won't upload replays on this level. 
+    /// If this is true, the game won't upload replays on this level.
     /// (unless you explicitly upload blank shells from the history section, that only contain the time you set without any replay data. Could be a bug).
     pub disable_replays: bool,
     /// Whether revive pads are disabled or not.
@@ -857,10 +857,7 @@ impl Write for Vec2 {
 
 impl Default for Vec2 {
     fn default() -> Self {
-        Self {
-            x: 0.0,
-            y: 0.0,
-        }
+        Self { x: 0.0, y: 0.0 }
     }
 }
 
@@ -1579,9 +1576,10 @@ pub struct Script {
 
 impl Read for Script {
     fn read(input: &mut impl std::io::Read) -> Result<Self, Error>
-        where
-            Self: Sized {
-        Ok(Self { 
+    where
+        Self: Sized,
+    {
+        Ok(Self {
             script_id: Read::read(input)?,
             name: Read::read(input)?,
             creation_date: Read::read(input)?,
@@ -1609,9 +1607,10 @@ pub struct OldAction {
 
 impl Read for OldAction {
     fn read(input: &mut impl std::io::Read) -> Result<Self, Error>
-        where
-            Self: Sized {
-        Ok(Self { 
+    where
+        Self: Sized,
+    {
+        Ok(Self {
             action_type: Read::read(input)?,
             wait: Read::read(input)?,
             properties: Read::read(input)?,
@@ -1710,9 +1709,10 @@ pub struct OldActionProperty {
 
 impl Read for OldActionProperty {
     fn read(input: &mut impl std::io::Read) -> Result<Self, Error>
-        where
-            Self: Sized {
-        Ok(Self { 
+    where
+        Self: Sized,
+    {
+        Ok(Self {
             name: Read::read(input)?,
             value: Read::read(input)?,
         })
@@ -2031,15 +2031,15 @@ pub enum ActionType {
         actions: Vec<Action>,
     },
     StopSound {
-        sound_instance: NovaValue, 
-        fade_out: NovaValue
+        sound_instance: NovaValue,
+        fade_out: NovaValue,
     },
     PlayParticleSystem {
-        target_objects: NovaValue
+        target_objects: NovaValue,
     },
     StopParticleSystem {
-        target_objects: NovaValue, 
-        clear: NovaValue
+        target_objects: NovaValue,
+        clear: NovaValue,
     },
 }
 
@@ -2334,18 +2334,18 @@ impl ReadContext for ActionType {
                 target_objects: Read::read(input)?,
                 actions: Read::read(input)?,
             },
-            50 => Self::StopSound { 
+            50 => Self::StopSound {
                 sound_instance: Read::read(input)?,
                 fade_out: Read::read(input)?,
             },
-            51 => Self::PlayParticleSystem { 
-                target_objects: Read::read(input)?, 
+            51 => Self::PlayParticleSystem {
+                target_objects: Read::read(input)?,
             },
-            52 => Self::StopParticleSystem { 
+            52 => Self::StopParticleSystem {
                 target_objects: Read::read(input)?,
                 clear: Read::read(input)?,
             },
-            
+
             n => return Err(Error::InvalidActionType(n)),
         })
     }
@@ -2435,7 +2435,8 @@ impl Write for ActionType {
             Self::ResetObject { target_objects }
             | Self::Activate { target_objects }
             | Self::Deactivate { target_objects }
-            | Self::Kill { target_objects } => target_objects.write(output),
+            | Self::Kill { target_objects }
+            | Self::PlayParticleSystem { target_objects } => target_objects.write(output),
             Self::SetColor {
                 target_objects,
                 colour,
@@ -2689,21 +2690,16 @@ impl Write for ActionType {
                 target_objects.write(output)?;
                 actions.write(output)
             }
-            Self::StopSound { 
+            Self::StopSound {
                 sound_instance,
-                fade_out 
+                fade_out,
             } => {
                 sound_instance.write(output)?;
                 fade_out.write(output)
             }
-            Self::PlayParticleSystem { 
-                target_objects 
-            } => {
-                target_objects.write(output)
-            }
-            Self::StopParticleSystem { 
-                target_objects, 
-                clear 
+            Self::StopParticleSystem {
+                target_objects,
+                clear,
             } => {
                 target_objects.write(output)?;
                 clear.write(output)
@@ -3190,9 +3186,10 @@ impl Write for Parameter {
 
 impl Read for Uuid {
     fn read(input: &mut impl std::io::Read) -> Result<Self, Error>
-        where
-            Self: Sized {
-        Ok(uuid::Uuid::parse_str(&String::read(input)?).unwrap())
+    where
+        Self: Sized,
+    {
+        Ok(Self::parse_str(&String::read(input)?).unwrap())
     }
 }
 
