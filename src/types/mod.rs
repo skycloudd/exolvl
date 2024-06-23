@@ -15,5 +15,6 @@ pub mod object_property;
 pub mod old_script;
 pub mod pattern;
 pub mod prefab;
+pub mod theme;
 pub(crate) mod varint;
 pub mod vec2;

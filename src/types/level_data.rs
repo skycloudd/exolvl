@@ -6,6 +6,7 @@ use super::{
     object::Object,
     pattern::Pattern,
     prefab::Prefab,
+    theme::Theme,
     vec2::Vec2,
 };
 use crate::{error::Error, Read, ReadVersioned, Write};
@@ -76,7 +77,7 @@ pub struct LevelData {
     /// All the global variables in the level.
     pub global_variables: Vec<Variable>,
     /// The theme name of the level.
-    pub theme: String,
+    pub theme: Theme,
     /// The custom background color of the level.
     pub custom_background_color: Color,
 
@@ -138,7 +139,6 @@ impl LevelData {
             nova_level: true,
             color_palette: Some(Vec::default()),
             laps: 1,
-            theme: "mountains".to_string(),
             default_music: true,
             gravity: Vec2 { x: 0.0, y: -75.0 },
             ..Default::default()

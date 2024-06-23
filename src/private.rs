@@ -19,6 +19,7 @@ use crate::types::{
     old_script::{OldAction, OldActionProperty, OldActionType, Script},
     pattern::Pattern,
     prefab::Prefab,
+    theme::Theme,
     varint::Varint,
     vec2::Vec2,
 };
@@ -40,6 +41,7 @@ macro_rules! impl_sealed {
 impl_sealed!(
     Varint,
     String,
+    &str,
     u32,
     i32,
     i64,
@@ -78,6 +80,7 @@ impl_sealed!(
     Activator,
     Parameter,
     Uuid,
+    Theme
 );
 
 #[cfg(feature = "image")]

@@ -28,6 +28,18 @@ impl Write for String {
     }
 }
 
+impl Write for &str {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
+        Varint(i32::try_from(self.len()).unwrap()).write(output)?;
+
+        for c in self.chars() {
+            (c as u8).write(output)?;
+        }
+
+        Ok(())
+    }
+}
+
 impl Write for u32 {
     fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         Ok(output.write_all(&self.to_le_bytes())?)

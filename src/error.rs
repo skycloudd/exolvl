@@ -15,6 +15,8 @@ pub enum Error {
     InvalidOldActionType(i32),
     /// The value of an `ActionType` is invalid.
     InvalidActionType(i32),
+    /// The theme is invalid.
+    InvalidTheme(String),
     /// An error occurred while reading a LEB128 value.
     LebRead(leb128::read::Error),
     /// An I/O error occurred while reading/writing to a file.
@@ -35,6 +37,7 @@ impl core::fmt::Display for Error {
             }
             Self::InvalidOldActionType(value) => write!(f, "invalid old action type: {value}"),
             Self::InvalidActionType(value) => write!(f, "invalid action type: {value}"),
+            Self::InvalidTheme(value) => write!(f, "invalid theme: {value}"),
             Self::LebRead(err) => write!(f, "{err}"),
             Self::Io(err) => write!(f, "{err}"),
             #[cfg(feature = "image")]

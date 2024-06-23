@@ -171,7 +171,7 @@ impl Read for ObjectProperty {
             82 => Self::AnchorPos(Read::read(input)?),
             83 => Self::MoonInnerRadius(Read::read(input)?),
             84 => Self::MoonOffset(Read::read(input)?),
-            n => return Err(crate::error::Error::InvalidObjectPropertyType(n)),
+            n => return Err(Error::InvalidObjectPropertyType(n)),
         })
     }
 }
