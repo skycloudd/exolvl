@@ -1,6 +1,5 @@
-use crate::{error::Error, Read, Write};
-
 use super::{color::Colour, vec2::Vec2};
+use crate::{error::Error, Read, Write};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug)]

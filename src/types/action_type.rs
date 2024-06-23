@@ -1,4 +1,5 @@
-use crate::{error::Error, Action, FunctionCall, NovaValue, Read, ReadContext, Write};
+use super::novascript::{action::Action, nova_value::NovaValue};
+use crate::{error::Error, FunctionCall, Read, ReadContext, Write};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug)]

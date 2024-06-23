@@ -8,6 +8,7 @@ pub mod image;
 pub mod layer;
 pub mod level_data;
 pub mod local_level;
+pub mod novascript;
 pub mod object;
 pub mod object_property;
 pub mod pattern;

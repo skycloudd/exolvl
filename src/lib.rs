@@ -17,7 +17,7 @@ pub mod types;
 
 use error::Error;
 pub use traits::{Read, ReadContext, ReadVersioned, Write};
-use types::{action_type::ActionType, color::Colour, dynamic_type::DynamicType, vec2::Vec2};
+use types::novascript::nova_value::NovaValue;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug)]
@@ -182,126 +182,6 @@ impl Write for OldActionProperty {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug)]
-pub struct NovaScript {
-    pub script_id: i32,
-    pub script_name: String,
-    pub is_function: bool,
-    pub activation_count: i32,
-    pub condition: NovaValue,
-    pub activation_list: Vec<Activator>,
-    pub parameters: Vec<Parameter>,
-    pub variables: Vec<Variable>,
-    pub actions: Vec<Action>,
-}
-
-impl Read for NovaScript {
-    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
-        Ok(Self {
-            script_id: Read::read(input)?,
-            script_name: Read::read(input)?,
-            is_function: Read::read(input)?,
-            activation_count: Read::read(input)?,
-            condition: Read::read(input)?,
-            activation_list: Read::read(input)?,
-            parameters: Read::read(input)?,
-            variables: Read::read(input)?,
-            actions: Read::read(input)?,
-        })
-    }
-}
-
-impl Write for NovaScript {
-    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
-        self.script_id.write(output)?;
-        self.script_name.write(output)?;
-        self.is_function.write(output)?;
-        self.activation_count.write(output)?;
-        self.condition.write(output)?;
-        self.activation_list.write(output)?;
-        self.parameters.write(output)?;
-        self.variables.write(output)?;
-        self.actions.write(output)
-    }
-}
-
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug)]
-pub struct Action {
-    pub closed: bool,
-    pub wait: bool,
-    pub action_type: ActionType,
-}
-
-impl Read for Action {
-    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
-        let action_type = Read::read(input)?;
-
-        Ok(Self {
-            closed: Read::read(input)?,
-            wait: Read::read(input)?,
-            action_type: ReadContext::read_ctx(input, action_type)?,
-        })
-    }
-}
-
-impl Write for Action {
-    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
-        let action_type = i32::from(&self.action_type);
-
-        action_type.write(output)?;
-        self.closed.write(output)?;
-        self.wait.write(output)?;
-        self.action_type.write(output)
-    }
-}
-
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug)]
-pub struct NovaValue {
-    pub dynamic_type: DynamicType,
-
-    pub bool_value: bool,
-    pub int_value: i32,
-    pub float_value: f32,
-    pub string_value: Option<String>,
-    pub color_value: Colour,
-    pub vector_value: Vec2,
-    pub int_list_value: Option<Vec<i32>>,
-    pub sub_values: Option<Vec<NovaValue>>,
-}
-
-impl Read for NovaValue {
-    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
-        Ok(Self {
-            dynamic_type: Read::read(input)?,
-            bool_value: Read::read(input)?,
-            int_value: Read::read(input)?,
-            float_value: Read::read(input)?,
-            string_value: Read::read(input)?,
-            color_value: Read::read(input)?,
-            vector_value: Read::read(input)?,
-            int_list_value: Read::read(input)?,
-            sub_values: Read::read(input)?,
-        })
-    }
-}
-
-impl Write for NovaValue {
-    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
-        self.dynamic_type.write(output)?;
-        self.bool_value.write(output)?;
-        self.int_value.write(output)?;
-        self.float_value.write(output)?;
-        self.string_value.write(output)?;
-        self.color_value.write(output)?;
-        self.vector_value.write(output)?;
-        self.int_list_value.write(output)?;
-        self.sub_values.write(output)
-    }
-}
-
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug)]
 pub struct FunctionCall {
     pub id: i32,
     pub parameters: Vec<CallParameter>,
@@ -343,35 +223,6 @@ impl Write for CallParameter {
     fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         self.parameter_id.write(output)?;
         self.value.write(output)
-    }
-}
-
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug)]
-pub struct Variable {
-    pub variable_id: i32,
-    pub name: String,
-    pub static_type: StaticType,
-    pub initial_value: NovaValue,
-}
-
-impl Read for Variable {
-    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
-        Ok(Self {
-            variable_id: Read::read(input)?,
-            name: Read::read(input)?,
-            static_type: Read::read(input)?,
-            initial_value: Read::read(input)?,
-        })
-    }
-}
-
-impl Write for Variable {
-    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
-        self.variable_id.write(output)?;
-        self.name.write(output)?;
-        self.static_type.write(output)?;
-        self.initial_value.write(output)
     }
 }
 
@@ -433,57 +284,5 @@ impl Read for StaticType {
 impl Write for StaticType {
     fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         i32::from(self).write(output)
-    }
-}
-
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug)]
-pub struct Activator {
-    pub activator_type: i32,
-    pub parameters: Vec<NovaValue>,
-}
-
-impl Read for Activator {
-    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
-        Ok(Self {
-            activator_type: Read::read(input)?,
-            parameters: Read::read(input)?,
-        })
-    }
-}
-
-impl Write for Activator {
-    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
-        self.activator_type.write(output)?;
-        self.parameters.write(output)
-    }
-}
-
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug)]
-pub struct Parameter {
-    pub parameter_id: i32,
-    pub name: String,
-    pub static_type: StaticType,
-    pub default_value: NovaValue,
-}
-
-impl Read for Parameter {
-    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
-        Ok(Self {
-            parameter_id: Read::read(input)?,
-            name: Read::read(input)?,
-            static_type: Read::read(input)?,
-            default_value: Read::read(input)?,
-        })
-    }
-}
-
-impl Write for Parameter {
-    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
-        self.parameter_id.write(output)?;
-        self.name.write(output)?;
-        self.static_type.write(output)?;
-        self.default_value.write(output)
     }
 }

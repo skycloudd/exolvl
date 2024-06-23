@@ -1,8 +1,14 @@
 use super::{
-    brush::Brush, color::Colour, layer::Layer, object::Object, pattern::Pattern, prefab::Prefab,
+    brush::Brush,
+    color::Colour,
+    layer::Layer,
+    novascript::{variable::Variable, NovaScript},
+    object::Object,
+    pattern::Pattern,
+    prefab::Prefab,
     vec2::Vec2,
 };
-use crate::{error::Error, NovaScript, Read, ReadVersioned, Variable, Write};
+use crate::{error::Error, Read, ReadVersioned, Write};
 use uuid::Uuid;
 
 /// The level data for an Exoracer level.

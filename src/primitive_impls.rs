@@ -1,6 +1,5 @@
-use uuid::Uuid;
-
 use crate::{error::Error, types::varint::Varint, Read, Write};
+use uuid::Uuid;
 
 impl Read for String {
     fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
