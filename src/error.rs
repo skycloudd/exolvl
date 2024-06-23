@@ -5,15 +5,15 @@
 pub enum Error {
     /// The file doesn't have the correct magic number. ("NYA^")
     WrongMagic,
-    /// The value of a DynamicType is invalid.
+    /// The value of a `DynamicType` is invalid.
     InvalidDynamicType(i32),
-    /// The value of a StaticType is invalid.
+    /// The value of a `StaticType` is invalid.
     InvalidStaticType(i32),
-    /// The value of an ObjectPropertyType is invalid.
+    /// The value of an `ObjectPropertyType` is invalid.
     InvalidObjectPropertyType(i32),
-    /// The value of an OldActionType is invalid.
+    /// The value of an `OldActionType` is invalid.
     InvalidOldActionType(i32),
-    /// The value of an ActionType is invalid.
+    /// The value of an `ActionType` is invalid.
     InvalidActionType(i32),
     /// An error occurred while reading a LEB128 value.
     LebRead(leb128::read::Error),
