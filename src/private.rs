@@ -1,7 +1,23 @@
+use crate::types::{
+    author_replay::AuthorReplay,
+    brush::{Brush, BrushGrid, BrushObject},
+    color::Colour,
+    exolvl::Exolvl,
+    image::Image,
+    layer::Layer,
+    level_data::LevelData,
+    local_level::LocalLevel,
+    object::Object,
+    object_property::ObjectProperty,
+    pattern::Pattern,
+    prefab::Prefab,
+    varint::Varint,
+    vec2::Vec2,
+};
 use chrono::{DateTime, Utc};
-use uuid::Uuid;
 #[cfg(feature = "image")]
 use image::DynamicImage;
+use uuid::Uuid;
 
 pub trait Sealed {}
 
@@ -14,7 +30,7 @@ macro_rules! impl_sealed {
 }
 
 impl_sealed!(
-    super::Varint,
+    Varint,
     String,
     u32,
     i32,
@@ -22,22 +38,22 @@ impl_sealed!(
     f32,
     bool,
     u8,
-    super::Exolvl,
-    super::LocalLevel,
+    Exolvl,
+    LocalLevel,
     DateTime<Utc>,
-    super::LevelData,
-    super::Pattern,
-    super::Prefab,
-    super::Image,
-    super::Layer,
-    super::Vec2,
-    super::Colour,
-    super::AuthorReplay,
-    super::Object,
-    super::ObjectProperty,
-    super::Brush,
-    super::BrushObject,
-    super::BrushGrid,
+    LevelData,
+    Pattern,
+    Prefab,
+    Image,
+    Layer,
+    Vec2,
+    Colour,
+    AuthorReplay,
+    Object,
+    ObjectProperty,
+    Brush,
+    BrushObject,
+    BrushGrid,
     super::Script,
     super::NovaScript,
     super::OldAction,
