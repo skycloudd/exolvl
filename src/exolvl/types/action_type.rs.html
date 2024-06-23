@@ -981,7 +981,7 @@
     },
     SetColor {
         target_objects: NovaValue,
-        colour: NovaValue,
+        color: NovaValue,
         channel: NovaValue,
         duration: NovaValue,
         easing: NovaValue,
@@ -995,7 +995,7 @@
     },
     SetSecondaryColor {
         target_objects: NovaValue,
-        colour: NovaValue,
+        color: NovaValue,
         duration: NovaValue,
         easing: NovaValue,
     },
@@ -1007,7 +1007,7 @@
     },
     SetBorderColor {
         target_objects: NovaValue,
-        colour: NovaValue,
+        color: NovaValue,
         duration: NovaValue,
         easing: NovaValue,
     },
@@ -1119,13 +1119,13 @@
     },
     TransitionIn {
         type_: NovaValue,
-        colour: NovaValue,
+        color: NovaValue,
         duration: NovaValue,
         easing: NovaValue,
     },
     TransitionOut {
         type_: NovaValue,
-        colour: NovaValue,
+        color: NovaValue,
         duration: NovaValue,
         easing: NovaValue,
     },
@@ -1286,7 +1286,7 @@
             },
             <span class="number">12 </span>=&gt; <span class="self">Self</span>::SetColor {
                 target_objects: Read::read(input)<span class="question-mark">?</span>,
-                colour: Read::read(input)<span class="question-mark">?</span>,
+                color: Read::read(input)<span class="question-mark">?</span>,
                 channel: Read::read(input)<span class="question-mark">?</span>,
                 duration: Read::read(input)<span class="question-mark">?</span>,
                 easing: Read::read(input)<span class="question-mark">?</span>,
@@ -1300,7 +1300,7 @@
             },
             <span class="number">14 </span>=&gt; <span class="self">Self</span>::SetSecondaryColor {
                 target_objects: Read::read(input)<span class="question-mark">?</span>,
-                colour: Read::read(input)<span class="question-mark">?</span>,
+                color: Read::read(input)<span class="question-mark">?</span>,
                 duration: Read::read(input)<span class="question-mark">?</span>,
                 easing: Read::read(input)<span class="question-mark">?</span>,
             },
@@ -1312,7 +1312,7 @@
             },
             <span class="number">16 </span>=&gt; <span class="self">Self</span>::SetBorderColor {
                 target_objects: Read::read(input)<span class="question-mark">?</span>,
-                colour: Read::read(input)<span class="question-mark">?</span>,
+                color: Read::read(input)<span class="question-mark">?</span>,
                 duration: Read::read(input)<span class="question-mark">?</span>,
                 easing: Read::read(input)<span class="question-mark">?</span>,
             },
@@ -1424,13 +1424,13 @@
             },
             <span class="number">44 </span>=&gt; <span class="self">Self</span>::TransitionIn {
                 type_: Read::read(input)<span class="question-mark">?</span>,
-                colour: Read::read(input)<span class="question-mark">?</span>,
+                color: Read::read(input)<span class="question-mark">?</span>,
                 duration: Read::read(input)<span class="question-mark">?</span>,
                 easing: Read::read(input)<span class="question-mark">?</span>,
             },
             <span class="number">45 </span>=&gt; <span class="self">Self</span>::TransitionOut {
                 type_: Read::read(input)<span class="question-mark">?</span>,
-                colour: Read::read(input)<span class="question-mark">?</span>,
+                color: Read::read(input)<span class="question-mark">?</span>,
                 duration: Read::read(input)<span class="question-mark">?</span>,
                 easing: Read::read(input)<span class="question-mark">?</span>,
             },
@@ -1558,13 +1558,13 @@
             | <span class="self">Self</span>::PlayParticleSystem { target_objects } =&gt; target_objects.write(output),
             <span class="self">Self</span>::SetColor {
                 target_objects,
-                colour,
+                color,
                 channel,
                 duration,
                 easing,
             } =&gt; {
                 target_objects.write(output)<span class="question-mark">?</span>;
-                colour.write(output)<span class="question-mark">?</span>;
+                color.write(output)<span class="question-mark">?</span>;
                 channel.write(output)<span class="question-mark">?</span>;
                 duration.write(output)<span class="question-mark">?</span>;
                 easing.write(output)
@@ -1584,12 +1584,12 @@
             }
             <span class="self">Self</span>::SetSecondaryColor {
                 target_objects,
-                colour,
+                color,
                 duration,
                 easing,
             } =&gt; {
                 target_objects.write(output)<span class="question-mark">?</span>;
-                colour.write(output)<span class="question-mark">?</span>;
+                color.write(output)<span class="question-mark">?</span>;
                 duration.write(output)<span class="question-mark">?</span>;
                 easing.write(output)
             }
@@ -1606,12 +1606,12 @@
             }
             <span class="self">Self</span>::SetBorderColor {
                 target_objects,
-                colour,
+                color,
                 duration,
                 easing,
             } =&gt; {
                 target_objects.write(output)<span class="question-mark">?</span>;
-                colour.write(output)<span class="question-mark">?</span>;
+                color.write(output)<span class="question-mark">?</span>;
                 duration.write(output)<span class="question-mark">?</span>;
                 easing.write(output)
             }
@@ -1761,23 +1761,23 @@
             <span class="self">Self</span>::StopScript { script } =&gt; script.write(output),
             <span class="self">Self</span>::TransitionIn {
                 type_,
-                colour,
+                color,
                 duration,
                 easing,
             } =&gt; {
                 type_.write(output)<span class="question-mark">?</span>;
-                colour.write(output)<span class="question-mark">?</span>;
+                color.write(output)<span class="question-mark">?</span>;
                 duration.write(output)<span class="question-mark">?</span>;
                 easing.write(output)
             }
             <span class="self">Self</span>::TransitionOut {
                 type_,
-                colour,
+                color,
                 duration,
                 easing,
             } =&gt; {
                 type_.write(output)<span class="question-mark">?</span>;
-                colour.write(output)<span class="question-mark">?</span>;
+                color.write(output)<span class="question-mark">?</span>;
                 duration.write(output)<span class="question-mark">?</span>;
                 easing.write(output)
             }

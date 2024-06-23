@@ -503,16 +503,16 @@
 <a href="#503" id="503">503</a>
 <a href="#504" id="504">504</a>
 <a href="#505" id="505">505</a>
-</pre></div><pre class="rust"><code><span class="kw">use super</span>::{color::Colour, vec2::Vec2};
+</pre></div><pre class="rust"><code><span class="kw">use super</span>::{color::Color, vec2::Vec2};
 <span class="kw">use crate</span>::{error::Error, Read, Write};
 
 <span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug)]
 </span><span class="kw">pub enum </span>ObjectProperty {
-    Colour(Colour),
+    Color(Color),
     Resolution(i32),
     FillMode(i32),
-    SecondaryColour(Colour),
+    SecondaryColor(Color),
     Thickness(f32),
     TotalAngle(i32),
     Corners(i32),
@@ -521,7 +521,7 @@
     CornerRadius(f32),
     Width(f32),
     Height(f32),
-    BorderColour(Colour),
+    BorderColor(Color),
     BorderThickness(f32),
     PhysicsType(i32),
     Friction(f32),
@@ -552,10 +552,10 @@
     FlipY(bool),
     Text(String),
     FontSize(f32),
-    EditorColour(Colour),
-    Colour2(Colour),
-    Colour3(Colour),
-    Colour4(Colour),
+    EditorColor(Color),
+    Color2(Color),
+    Color3(Color),
+    Color4(Color),
     ParticleTexture(String),
     Duration(f32),
     Delay(f32),
@@ -582,9 +582,9 @@
     RotationMin(f32),
     RotationMax(f32),
     Rotationspeed(f32),
-    ColourOverLifetime(bool),
-    StartColourMultiplier(Colour),
-    EndColourMultiplier(Colour),
+    ColorOverLifetime(bool),
+    StartColorMultiplier(Color),
+    EndColorMultiplier(Color),
     GravityMultiplier(f32),
     AnchorPos(Vec2),
     MoonInnerRadius(f32),
@@ -596,10 +596,10 @@
         <span class="kw">let </span>property_type = Read::read(input)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="kw">match </span>property_type {
-            <span class="number">0 </span>=&gt; <span class="self">Self</span>::Colour(Read::read(input)<span class="question-mark">?</span>),
+            <span class="number">0 </span>=&gt; <span class="self">Self</span>::Color(Read::read(input)<span class="question-mark">?</span>),
             <span class="number">1 </span>=&gt; <span class="self">Self</span>::Resolution(Read::read(input)<span class="question-mark">?</span>),
             <span class="number">2 </span>=&gt; <span class="self">Self</span>::FillMode(Read::read(input)<span class="question-mark">?</span>),
-            <span class="number">3 </span>=&gt; <span class="self">Self</span>::SecondaryColour(Read::read(input)<span class="question-mark">?</span>),
+            <span class="number">3 </span>=&gt; <span class="self">Self</span>::SecondaryColor(Read::read(input)<span class="question-mark">?</span>),
             <span class="number">4 </span>=&gt; <span class="self">Self</span>::Thickness(Read::read(input)<span class="question-mark">?</span>),
             <span class="number">5 </span>=&gt; <span class="self">Self</span>::TotalAngle(Read::read(input)<span class="question-mark">?</span>),
             <span class="number">6 </span>=&gt; <span class="self">Self</span>::Corners(Read::read(input)<span class="question-mark">?</span>),
@@ -608,7 +608,7 @@
             <span class="number">9 </span>=&gt; <span class="self">Self</span>::CornerRadius(Read::read(input)<span class="question-mark">?</span>),
             <span class="number">10 </span>=&gt; <span class="self">Self</span>::Width(Read::read(input)<span class="question-mark">?</span>),
             <span class="number">11 </span>=&gt; <span class="self">Self</span>::Height(Read::read(input)<span class="question-mark">?</span>),
-            <span class="number">12 </span>=&gt; <span class="self">Self</span>::BorderColour(Read::read(input)<span class="question-mark">?</span>),
+            <span class="number">12 </span>=&gt; <span class="self">Self</span>::BorderColor(Read::read(input)<span class="question-mark">?</span>),
             <span class="number">13 </span>=&gt; <span class="self">Self</span>::BorderThickness(Read::read(input)<span class="question-mark">?</span>),
             <span class="number">14 </span>=&gt; <span class="self">Self</span>::PhysicsType(Read::read(input)<span class="question-mark">?</span>),
             <span class="number">15 </span>=&gt; <span class="self">Self</span>::Friction(Read::read(input)<span class="question-mark">?</span>),
@@ -639,10 +639,10 @@
             <span class="number">44 </span>=&gt; <span class="self">Self</span>::FlipY(Read::read(input)<span class="question-mark">?</span>),
             <span class="number">45 </span>=&gt; <span class="self">Self</span>::Text(Read::read(input)<span class="question-mark">?</span>),
             <span class="number">46 </span>=&gt; <span class="self">Self</span>::FontSize(Read::read(input)<span class="question-mark">?</span>),
-            <span class="number">47 </span>=&gt; <span class="self">Self</span>::EditorColour(Read::read(input)<span class="question-mark">?</span>),
-            <span class="number">48 </span>=&gt; <span class="self">Self</span>::Colour2(Read::read(input)<span class="question-mark">?</span>),
-            <span class="number">49 </span>=&gt; <span class="self">Self</span>::Colour3(Read::read(input)<span class="question-mark">?</span>),
-            <span class="number">50 </span>=&gt; <span class="self">Self</span>::Colour4(Read::read(input)<span class="question-mark">?</span>),
+            <span class="number">47 </span>=&gt; <span class="self">Self</span>::EditorColor(Read::read(input)<span class="question-mark">?</span>),
+            <span class="number">48 </span>=&gt; <span class="self">Self</span>::Color2(Read::read(input)<span class="question-mark">?</span>),
+            <span class="number">49 </span>=&gt; <span class="self">Self</span>::Color3(Read::read(input)<span class="question-mark">?</span>),
+            <span class="number">50 </span>=&gt; <span class="self">Self</span>::Color4(Read::read(input)<span class="question-mark">?</span>),
             <span class="number">51 </span>=&gt; <span class="self">Self</span>::ParticleTexture(Read::read(input)<span class="question-mark">?</span>),
             <span class="number">52 </span>=&gt; <span class="self">Self</span>::Duration(Read::read(input)<span class="question-mark">?</span>),
             <span class="number">53 </span>=&gt; <span class="self">Self</span>::Delay(Read::read(input)<span class="question-mark">?</span>),
@@ -669,9 +669,9 @@
             <span class="number">75 </span>=&gt; <span class="self">Self</span>::RotationMin(Read::read(input)<span class="question-mark">?</span>),
             <span class="number">76 </span>=&gt; <span class="self">Self</span>::RotationMax(Read::read(input)<span class="question-mark">?</span>),
             <span class="number">77 </span>=&gt; <span class="self">Self</span>::Rotationspeed(Read::read(input)<span class="question-mark">?</span>),
-            <span class="number">78 </span>=&gt; <span class="self">Self</span>::ColourOverLifetime(Read::read(input)<span class="question-mark">?</span>),
-            <span class="number">79 </span>=&gt; <span class="self">Self</span>::StartColourMultiplier(Read::read(input)<span class="question-mark">?</span>),
-            <span class="number">80 </span>=&gt; <span class="self">Self</span>::EndColourMultiplier(Read::read(input)<span class="question-mark">?</span>),
+            <span class="number">78 </span>=&gt; <span class="self">Self</span>::ColorOverLifetime(Read::read(input)<span class="question-mark">?</span>),
+            <span class="number">79 </span>=&gt; <span class="self">Self</span>::StartColorMultiplier(Read::read(input)<span class="question-mark">?</span>),
+            <span class="number">80 </span>=&gt; <span class="self">Self</span>::EndColorMultiplier(Read::read(input)<span class="question-mark">?</span>),
             <span class="number">81 </span>=&gt; <span class="self">Self</span>::GravityMultiplier(Read::read(input)<span class="question-mark">?</span>),
             <span class="number">82 </span>=&gt; <span class="self">Self</span>::AnchorPos(Read::read(input)<span class="question-mark">?</span>),
             <span class="number">83 </span>=&gt; <span class="self">Self</span>::MoonInnerRadius(Read::read(input)<span class="question-mark">?</span>),
@@ -685,7 +685,7 @@
     <span class="attr">#[allow(clippy::too_many_lines)]
     </span><span class="kw">fn </span>write(<span class="kw-2">&amp;</span><span class="self">self</span>, output: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>std::io::Write) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
         <span class="kw">match </span><span class="self">self </span>{
-            <span class="self">Self</span>::Colour(value) =&gt; {
+            <span class="self">Self</span>::Color(value) =&gt; {
                 <span class="number">0</span>.write(output)<span class="question-mark">?</span>;
                 value.write(output)
             }
@@ -697,7 +697,7 @@
                 <span class="number">2</span>.write(output)<span class="question-mark">?</span>;
                 value.write(output)
             }
-            <span class="self">Self</span>::SecondaryColour(value) =&gt; {
+            <span class="self">Self</span>::SecondaryColor(value) =&gt; {
                 <span class="number">3</span>.write(output)<span class="question-mark">?</span>;
                 value.write(output)
             }
@@ -733,7 +733,7 @@
                 <span class="number">11</span>.write(output)<span class="question-mark">?</span>;
                 value.write(output)
             }
-            <span class="self">Self</span>::BorderColour(value) =&gt; {
+            <span class="self">Self</span>::BorderColor(value) =&gt; {
                 <span class="number">12</span>.write(output)<span class="question-mark">?</span>;
                 value.write(output)
             }
@@ -857,19 +857,19 @@
                 <span class="number">46</span>.write(output)<span class="question-mark">?</span>;
                 value.write(output)
             }
-            <span class="self">Self</span>::EditorColour(value) =&gt; {
+            <span class="self">Self</span>::EditorColor(value) =&gt; {
                 <span class="number">47</span>.write(output)<span class="question-mark">?</span>;
                 value.write(output)
             }
-            <span class="self">Self</span>::Colour2(value) =&gt; {
+            <span class="self">Self</span>::Color2(value) =&gt; {
                 <span class="number">48</span>.write(output)<span class="question-mark">?</span>;
                 value.write(output)
             }
-            <span class="self">Self</span>::Colour3(value) =&gt; {
+            <span class="self">Self</span>::Color3(value) =&gt; {
                 <span class="number">49</span>.write(output)<span class="question-mark">?</span>;
                 value.write(output)
             }
-            <span class="self">Self</span>::Colour4(value) =&gt; {
+            <span class="self">Self</span>::Color4(value) =&gt; {
                 <span class="number">50</span>.write(output)<span class="question-mark">?</span>;
                 value.write(output)
             }
@@ -977,15 +977,15 @@
                 <span class="number">77</span>.write(output)<span class="question-mark">?</span>;
                 value.write(output)
             }
-            <span class="self">Self</span>::ColourOverLifetime(value) =&gt; {
+            <span class="self">Self</span>::ColorOverLifetime(value) =&gt; {
                 <span class="number">78</span>.write(output)<span class="question-mark">?</span>;
                 value.write(output)
             }
-            <span class="self">Self</span>::StartColourMultiplier(value) =&gt; {
+            <span class="self">Self</span>::StartColorMultiplier(value) =&gt; {
                 <span class="number">79</span>.write(output)<span class="question-mark">?</span>;
                 value.write(output)
             }
-            <span class="self">Self</span>::EndColourMultiplier(value) =&gt; {
+            <span class="self">Self</span>::EndColorMultiplier(value) =&gt; {
                 <span class="number">80</span>.write(output)<span class="question-mark">?</span>;
                 value.write(output)
             }

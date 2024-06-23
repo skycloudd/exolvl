@@ -257,7 +257,7 @@
 <a href="#257" id="257">257</a>
 </pre></div><pre class="rust"><code><span class="kw">use super</span>::{
     brush::Brush,
-    color::Colour,
+    color::Color,
     layer::Layer,
     novascript::{variable::Variable, NovaScript},
     object::Object,
@@ -304,10 +304,10 @@
     </span><span class="kw">pub </span>brushes: Vec&lt;Brush&gt;,
     <span class="doccomment">/// The patterns in the level.
     </span><span class="kw">pub </span>patterns: Vec&lt;Pattern&gt;,
-    <span class="doccomment">/// The colour palettes in the level.
+    <span class="doccomment">/// The color palettes in the level.
     ///
     /// This is only present in levels with version 17 or higher.
-    </span><span class="kw">pub </span>colour_palette: <span class="prelude-ty">Option</span>&lt;Vec&lt;Colour&gt;&gt;,
+    </span><span class="kw">pub </span>color_palette: <span class="prelude-ty">Option</span>&lt;Vec&lt;Color&gt;&gt;,
     <span class="doccomment">/// The author medal time for this level in milliseconds.
     </span><span class="kw">pub </span>author_time: i64,
     <span class="doccomment">/// The author medal lap times for this level in milliseconds.
@@ -334,29 +334,29 @@
     </span><span class="kw">pub </span>global_variables: Vec&lt;Variable&gt;,
     <span class="doccomment">/// The theme name of the level.
     </span><span class="kw">pub </span>theme: String,
-    <span class="doccomment">/// The custom background colour of the level.
-    </span><span class="kw">pub </span>custom_background_colour: Colour,
+    <span class="doccomment">/// The custom background color of the level.
+    </span><span class="kw">pub </span>custom_background_color: Color,
 
     <span class="doccomment">/// Unknown data.
     </span><span class="kw">pub</span>(<span class="kw">crate</span>) unknown1: [u8; <span class="number">4</span>],
     <span class="doccomment">/// The following terrain related fields are all used when explicitly copying certain terrain data.
     ///
-    /// The custom terrain pattern that can be pasted with the `colour_paste` button if the recieving object has the `FillMode` set to `Pattern`.
+    /// The custom terrain pattern that can be pasted with the `color_paste` button if the recieving object has the `FillMode` set to `Pattern`.
     </span><span class="kw">pub </span>custom_terrain_pattern_id: i32,
     <span class="doccomment">/// The tiling of that pattern.
     </span><span class="kw">pub </span>custom_terrain_pattern_tiling: Vec2,
     <span class="doccomment">/// the offset of that pattern.
     </span><span class="kw">pub </span>custom_terrain_pattern_offset: Vec2,
-    <span class="doccomment">/// In the legacy editor: The custom terrain colour of the level.
-    /// In the new editor: The colour of the copied terrain.
-    </span><span class="kw">pub </span>custom_terrain_colour: Colour,
+    <span class="doccomment">/// In the legacy editor: The custom terrain color of the level.
+    /// In the new editor: The color of the copied terrain.
+    </span><span class="kw">pub </span>custom_terrain_color: Color,
     <span class="doccomment">/// Not 100% sure of the use of this, presumably the replacement for the border color in the new editor.
     /// Used when copying and pasting properties of terrain.
-    </span><span class="kw">pub </span>custom_terrain_secondary_color: Colour,
+    </span><span class="kw">pub </span>custom_terrain_secondary_color: Color,
     <span class="doccomment">/// The blend mode of the copied terrain.
     </span><span class="kw">pub </span>custom_terrain_blend_mode: i32,
-    <span class="doccomment">/// The custom terrain border colour of the level.
-    </span><span class="kw">pub </span>custom_terrain_border_colour: Colour,
+    <span class="doccomment">/// The custom terrain border color of the level.
+    </span><span class="kw">pub </span>custom_terrain_border_color: Color,
     <span class="doccomment">/// The thickness of the terrain border.
     </span><span class="kw">pub </span>custom_terrain_border_thickness: f32,
     <span class="doccomment">/// The corner radius of the terrain border.
@@ -393,7 +393,7 @@
             level_id,
             level_version: <span class="number">1</span>,
             nova_level: <span class="bool-val">true</span>,
-            colour_palette: <span class="prelude-val">Some</span>(Vec::default()),
+            color_palette: <span class="prelude-val">Some</span>(Vec::default()),
             laps: <span class="number">1</span>,
             theme: <span class="string">"mountains"</span>.to_string(),
             default_music: <span class="bool-val">true</span>,
@@ -420,7 +420,7 @@
             prefabs: Read::read(input)<span class="question-mark">?</span>,
             brushes: Read::read(input)<span class="question-mark">?</span>,
             patterns: Read::read(input)<span class="question-mark">?</span>,
-            colour_palette: <span class="kw">if </span>version &gt;= <span class="number">17 </span>{
+            color_palette: <span class="kw">if </span>version &gt;= <span class="number">17 </span>{
                 <span class="prelude-val">Some</span>(Read::read(input)<span class="question-mark">?</span>)
             } <span class="kw">else </span>{
                 <span class="prelude-val">None
@@ -435,15 +435,15 @@
             nova_scripts: Read::read(input)<span class="question-mark">?</span>,
             global_variables: Read::read(input)<span class="question-mark">?</span>,
             theme: Read::read(input)<span class="question-mark">?</span>,
-            custom_background_colour: Read::read(input)<span class="question-mark">?</span>,
+            custom_background_color: Read::read(input)<span class="question-mark">?</span>,
             unknown1: Read::read(input)<span class="question-mark">?</span>,
             custom_terrain_pattern_id: Read::read(input)<span class="question-mark">?</span>,
             custom_terrain_pattern_tiling: Read::read(input)<span class="question-mark">?</span>,
             custom_terrain_pattern_offset: Read::read(input)<span class="question-mark">?</span>,
-            custom_terrain_colour: Read::read(input)<span class="question-mark">?</span>,
+            custom_terrain_color: Read::read(input)<span class="question-mark">?</span>,
             custom_terrain_secondary_color: Read::read(input)<span class="question-mark">?</span>,
             custom_terrain_blend_mode: Read::read(input)<span class="question-mark">?</span>,
-            custom_terrain_border_colour: Read::read(input)<span class="question-mark">?</span>,
+            custom_terrain_border_color: Read::read(input)<span class="question-mark">?</span>,
             custom_terrain_border_thickness: Read::read(input)<span class="question-mark">?</span>,
             custom_terrain_border_corner_radius: Read::read(input)<span class="question-mark">?</span>,
             custom_terrain_round_reflex_angles: Read::read(input)<span class="question-mark">?</span>,
@@ -476,8 +476,8 @@
         <span class="self">self</span>.prefabs.write(output)<span class="question-mark">?</span>;
         <span class="self">self</span>.brushes.write(output)<span class="question-mark">?</span>;
         <span class="self">self</span>.patterns.write(output)<span class="question-mark">?</span>;
-        <span class="kw">if let </span><span class="prelude-val">Some</span>(colour_palette) = <span class="kw-2">&amp;</span><span class="self">self</span>.colour_palette {
-            colour_palette.write(output)<span class="question-mark">?</span>;
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(color_palette) = <span class="kw-2">&amp;</span><span class="self">self</span>.color_palette {
+            color_palette.write(output)<span class="question-mark">?</span>;
         }
         <span class="self">self</span>.author_time.write(output)<span class="question-mark">?</span>;
         <span class="self">self</span>.author_lap_times.write(output)<span class="question-mark">?</span>;
@@ -489,15 +489,15 @@
         <span class="self">self</span>.nova_scripts.write(output)<span class="question-mark">?</span>;
         <span class="self">self</span>.global_variables.write(output)<span class="question-mark">?</span>;
         <span class="self">self</span>.theme.write(output)<span class="question-mark">?</span>;
-        <span class="self">self</span>.custom_background_colour.write(output)<span class="question-mark">?</span>;
+        <span class="self">self</span>.custom_background_color.write(output)<span class="question-mark">?</span>;
         <span class="self">self</span>.unknown1.write(output)<span class="question-mark">?</span>;
         <span class="self">self</span>.custom_terrain_pattern_id.write(output)<span class="question-mark">?</span>;
         <span class="self">self</span>.custom_terrain_pattern_tiling.write(output)<span class="question-mark">?</span>;
         <span class="self">self</span>.custom_terrain_pattern_offset.write(output)<span class="question-mark">?</span>;
-        <span class="self">self</span>.custom_terrain_colour.write(output)<span class="question-mark">?</span>;
+        <span class="self">self</span>.custom_terrain_color.write(output)<span class="question-mark">?</span>;
         <span class="self">self</span>.custom_terrain_secondary_color.write(output)<span class="question-mark">?</span>;
         <span class="self">self</span>.custom_terrain_blend_mode.write(output)<span class="question-mark">?</span>;
-        <span class="self">self</span>.custom_terrain_border_colour.write(output)<span class="question-mark">?</span>;
+        <span class="self">self</span>.custom_terrain_border_color.write(output)<span class="question-mark">?</span>;
         <span class="self">self</span>.custom_terrain_border_thickness.write(output)<span class="question-mark">?</span>;
         <span class="self">self</span>.custom_terrain_border_corner_radius.write(output)<span class="question-mark">?</span>;
         <span class="self">self</span>.custom_terrain_round_reflex_angles.write(output)<span class="question-mark">?</span>;

@@ -50,7 +50,7 @@
 <a href="#50" id="50">50</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
     error::Error,
-    types::{color::Colour, dynamic_type::DynamicType, vec2::Vec2},
+    types::{color::Color, dynamic_type::DynamicType, vec2::Vec2},
     Read, Write,
 };
 
@@ -63,7 +63,7 @@
     <span class="kw">pub </span>int_value: i32,
     <span class="kw">pub </span>float_value: f32,
     <span class="kw">pub </span>string_value: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    <span class="kw">pub </span>color_value: Colour,
+    <span class="kw">pub </span>color_value: Color,
     <span class="kw">pub </span>vector_value: Vec2,
     <span class="kw">pub </span>int_list_value: <span class="prelude-ty">Option</span>&lt;Vec&lt;i32&gt;&gt;,
     <span class="kw">pub </span>sub_values: <span class="prelude-ty">Option</span>&lt;Vec&lt;NovaValue&gt;&gt;,

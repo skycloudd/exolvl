@@ -32,14 +32,14 @@
 
 <span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Copy, Debug, Default)]
-</span><span class="kw">pub struct </span>Colour {
+</span><span class="kw">pub struct </span>Color {
     <span class="kw">pub </span>r: f32,
     <span class="kw">pub </span>g: f32,
     <span class="kw">pub </span>b: f32,
     <span class="kw">pub </span>a: f32,
 }
 
-<span class="kw">impl </span>Read <span class="kw">for </span>Colour {
+<span class="kw">impl </span>Read <span class="kw">for </span>Color {
     <span class="kw">fn </span>read(input: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>std::io::Read) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, Error&gt; {
         <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
             r: Read::read(input)<span class="question-mark">?</span>,
@@ -50,7 +50,7 @@
     }
 }
 
-<span class="kw">impl </span>Write <span class="kw">for </span>Colour {
+<span class="kw">impl </span>Write <span class="kw">for </span>Color {
     <span class="kw">fn </span>write(<span class="kw-2">&amp;</span><span class="self">self</span>, output: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>std::io::Write) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
         <span class="self">self</span>.r.write(output)<span class="question-mark">?</span>;
         <span class="self">self</span>.g.write(output)<span class="question-mark">?</span>;
