@@ -53,11 +53,15 @@
 <a href="#53" id="53">53</a>
 <a href="#54" id="54">54</a>
 <a href="#55" id="55">55</a>
-</pre></div><pre class="rust"><code><span class="kw">use super</span>::{object_property::ObjectProperty, vec2::Vec2};
+<a href="#56" id="56">56</a>
+<a href="#57" id="57">57</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span>ordered_float::OrderedFloat;
+
+<span class="kw">use super</span>::{object_property::ObjectProperty, vec2::Vec2};
 <span class="kw">use crate</span>::{error::Error, Read, Write};
 
 <span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 </span><span class="kw">pub struct </span>Object {
     <span class="kw">pub </span>entity_id: i32,
     <span class="kw">pub </span>tile_id: i32,
@@ -65,7 +69,7 @@
     <span class="kw">pub </span>prefab_id: i32,
     <span class="kw">pub </span>position: Vec2,
     <span class="kw">pub </span>scale: Vec2,
-    <span class="kw">pub </span>rotation: f32,
+    <span class="kw">pub </span>rotation: OrderedFloat&lt;f32&gt;,
     <span class="kw">pub </span>tag: String,
     <span class="kw">pub </span>properties: Vec&lt;ObjectProperty&gt;,
     <span class="kw">pub </span>in_layer: i32,

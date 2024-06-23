@@ -52,7 +52,7 @@
 <span class="kw">use </span><span class="kw">super</span>::novascript::nova_value::NovaValue;
 
 <span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 </span><span class="kw">pub struct </span>FunctionCall {
     <span class="kw">pub </span>id: i32,
     <span class="kw">pub </span>parameters: Vec&lt;CallParameter&gt;,
@@ -75,7 +75,7 @@
 }
 
 <span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 </span><span class="kw">pub struct </span>CallParameter {
     <span class="kw">pub </span>parameter_id: i32,
     <span class="kw">pub </span>value: NovaValue,

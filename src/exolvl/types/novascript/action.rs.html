@@ -33,7 +33,7 @@
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{error::Error, types::action_type::ActionType, Read, ReadContext, Write};
 
 <span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 </span><span class="kw">pub struct </span>Action {
     <span class="kw">pub </span>closed: bool,
     <span class="kw">pub </span>wait: bool,

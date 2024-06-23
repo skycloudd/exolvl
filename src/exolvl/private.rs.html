@@ -89,6 +89,11 @@
 <a href="#89" id="89">89</a>
 <a href="#90" id="90">90</a>
 <a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::types::{
     action_type::ActionType,
     author_replay::AuthorReplay,
@@ -116,7 +121,8 @@
 };
 <span class="kw">use </span>chrono::{DateTime, Utc};
 <span class="attr">#[cfg(feature = <span class="string">"image"</span>)]
-</span><span class="kw">use </span>image::DynamicImage;
+</span><span class="kw">use </span>image::{DynamicImage, RgbaImage};
+<span class="kw">use </span>ordered_float::OrderedFloat;
 <span class="kw">use </span>uuid::Uuid;
 
 <span class="kw">pub trait </span>Sealed {}
@@ -171,11 +177,15 @@
     Activator,
     Parameter,
     Uuid,
-    Theme
+    Theme,
+    OrderedFloat&lt;f32&gt;,
 );
 
 <span class="attr">#[cfg(feature = <span class="string">"image"</span>)]
 </span><span class="kw">impl </span>Sealed <span class="kw">for </span>DynamicImage {}
+
+<span class="attr">#[cfg(feature = <span class="string">"image"</span>)]
+</span><span class="kw">impl </span>Sealed <span class="kw">for </span>RgbaImage {}
 
 <span class="kw">impl</span>&lt;T&gt; Sealed <span class="kw">for </span>Vec&lt;T&gt; {}
 <span class="kw">impl</span>&lt;T, <span class="kw">const </span>LEN: usize&gt; Sealed <span class="kw">for </span>[T; LEN] {}

@@ -25,23 +25,27 @@
 <a href="#25" id="25">25</a>
 <a href="#26" id="26">26</a>
 <a href="#27" id="27">27</a>
-</pre></div><pre class="rust"><code><span class="kw">use crate</span>::{error::Error, Read, Write};
+<a href="#28" id="28">28</a>
+<a href="#29" id="29">29</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span>ordered_float::OrderedFloat;
+
+<span class="kw">use crate</span>::{error::Error, Read, Write};
 
 <span class="doccomment">/// A 2D vector.
 </span><span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 </span><span class="kw">pub struct </span>Vec2 {
     <span class="doccomment">/// The x-coordinate.
-    </span><span class="kw">pub </span>x: f32,
+    </span><span class="kw">pub </span>x: OrderedFloat&lt;f32&gt;,
     <span class="doccomment">/// The y-coordinate.
-    </span><span class="kw">pub </span>y: f32,
+    </span><span class="kw">pub </span>y: OrderedFloat&lt;f32&gt;,
 }
 
 <span class="kw">impl </span>Read <span class="kw">for </span>Vec2 {
     <span class="kw">fn </span>read(input: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>std::io::Read) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, Error&gt; {
         <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
-            x: Read::read(input)<span class="question-mark">?</span>,
-            y: Read::read(input)<span class="question-mark">?</span>,
+            x: OrderedFloat(Read::read(input)<span class="question-mark">?</span>),
+            y: OrderedFloat(Read::read(input)<span class="question-mark">?</span>),
         })
     }
 }

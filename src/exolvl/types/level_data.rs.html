@@ -255,6 +255,10 @@
 <a href="#255" id="255">255</a>
 <a href="#256" id="256">256</a>
 <a href="#257" id="257">257</a>
+<a href="#258" id="258">258</a>
+<a href="#259" id="259">259</a>
+<a href="#260" id="260">260</a>
+<a href="#261" id="261">261</a>
 </pre></div><pre class="rust"><code><span class="kw">use super</span>::{
     brush::Brush,
     color::Color,
@@ -267,11 +271,12 @@
     vec2::Vec2,
 };
 <span class="kw">use crate</span>::{error::Error, Read, ReadVersioned, Write};
+<span class="kw">use </span>ordered_float::OrderedFloat;
 <span class="kw">use </span>uuid::Uuid;
 
 <span class="doccomment">/// The level data for an Exoracer level.
 </span><span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
 #[allow(clippy::struct_excessive_bools)]
 </span><span class="kw">pub struct </span>LevelData {
     <span class="doccomment">/// The UUID of the level.
@@ -359,15 +364,15 @@
     <span class="doccomment">/// The custom terrain border color of the level.
     </span><span class="kw">pub </span>custom_terrain_border_color: Color,
     <span class="doccomment">/// The thickness of the terrain border.
-    </span><span class="kw">pub </span>custom_terrain_border_thickness: f32,
+    </span><span class="kw">pub </span>custom_terrain_border_thickness: OrderedFloat&lt;f32&gt;,
     <span class="doccomment">/// The corner radius of the terrain border.
-    </span><span class="kw">pub </span>custom_terrain_border_corner_radius: f32,
+    </span><span class="kw">pub </span>custom_terrain_border_corner_radius: OrderedFloat&lt;f32&gt;,
     <span class="doccomment">/// Whether the copied terrain has round reflex angles or not (only visual).
     </span><span class="kw">pub </span>custom_terrain_round_reflex_angles: bool,
     <span class="doccomment">/// Whether the copied terrain has a round collider or not (not visual).
     </span><span class="kw">pub </span>custom_terrain_round_collider: bool,
     <span class="doccomment">/// The friction of the copied terrain.
-    </span><span class="kw">pub </span>custom_terrain_friction: f32,
+    </span><span class="kw">pub </span>custom_terrain_friction: OrderedFloat&lt;f32&gt;,
     <span class="doccomment">/// Whether the default music should be played or not.
     </span><span class="kw">pub </span>default_music: bool,
     <span class="doccomment">/// The music ids for the level. The game randomly picks one of these to play each time.
@@ -397,7 +402,10 @@
             color_palette: <span class="prelude-val">Some</span>(Vec::default()),
             laps: <span class="number">1</span>,
             default_music: <span class="bool-val">true</span>,
-            gravity: Vec2 { x: <span class="number">0.0</span>, y: -<span class="number">75.0 </span>},
+            gravity: Vec2 {
+                x: OrderedFloat(<span class="number">0.0</span>),
+                y: OrderedFloat(-<span class="number">75.0</span>),
+            },
             ..Default::default()
         }
     }

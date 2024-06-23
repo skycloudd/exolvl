@@ -28,15 +28,17 @@
 <a href="#28" id="28">28</a>
 <a href="#29" id="29">29</a>
 <a href="#30" id="30">30</a>
+<a href="#31" id="31">31</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{error::Error, Read, Write};
+<span class="kw">use </span>ordered_float::OrderedFloat;
 
 <span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 </span><span class="kw">pub struct </span>Color {
-    <span class="kw">pub </span>r: f32,
-    <span class="kw">pub </span>g: f32,
-    <span class="kw">pub </span>b: f32,
-    <span class="kw">pub </span>a: f32,
+    <span class="kw">pub </span>r: OrderedFloat&lt;f32&gt;,
+    <span class="kw">pub </span>g: OrderedFloat&lt;f32&gt;,
+    <span class="kw">pub </span>b: OrderedFloat&lt;f32&gt;,
+    <span class="kw">pub </span>a: OrderedFloat&lt;f32&gt;,
 }
 
 <span class="kw">impl </span>Read <span class="kw">for </span>Color {

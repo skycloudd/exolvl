@@ -27,7 +27,7 @@
 <span class="kw">use crate</span>::{error::Error, Read, Write};
 
 <span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 </span><span class="kw">pub struct </span>Activator {
     <span class="kw">pub </span>activator_type: i32,
     <span class="kw">pub </span>parameters: Vec&lt;NovaValue&gt;,

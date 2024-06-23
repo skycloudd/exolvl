@@ -104,7 +104,7 @@
 ///
 /// This data is only ever used in the level editor and is not uploaded to the server.
 </span><span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, Default, Hash)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 </span><span class="kw">pub struct </span>LocalLevel {
     <span class="doccomment">/// The version of the exolvl format that this level uses.
     ///

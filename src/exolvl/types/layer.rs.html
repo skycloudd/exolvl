@@ -49,7 +49,7 @@
 <span class="kw">use crate</span>::{error::Error, Read, Write};
 
 <span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 #[allow(clippy::struct_excessive_bools)]
 </span><span class="kw">pub struct </span>Layer {
     <span class="kw">pub </span>layer_id: i32,
