@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["action_type","author_replay","brush","color","dynamic_type","exolvl","function_call","image","layer","level_data","local_level","novascript","object","object_property","old_script","pattern","prefab","vec2"]};

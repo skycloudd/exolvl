@@ -62,10 +62,58 @@
 <a href="#62" id="62">62</a>
 <a href="#63" id="63">63</a>
 <a href="#64" id="64">64</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>chrono::{DateTime, Utc};
-<span class="kw">use </span>uuid::Uuid;
+<a href="#65" id="65">65</a>
+<a href="#66" id="66">66</a>
+<a href="#67" id="67">67</a>
+<a href="#68" id="68">68</a>
+<a href="#69" id="69">69</a>
+<a href="#70" id="70">70</a>
+<a href="#71" id="71">71</a>
+<a href="#72" id="72">72</a>
+<a href="#73" id="73">73</a>
+<a href="#74" id="74">74</a>
+<a href="#75" id="75">75</a>
+<a href="#76" id="76">76</a>
+<a href="#77" id="77">77</a>
+<a href="#78" id="78">78</a>
+<a href="#79" id="79">79</a>
+<a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a>
+<a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::types::{
+    action_type::ActionType,
+    author_replay::AuthorReplay,
+    brush::{Brush, BrushGrid, BrushObject},
+    color::Colour,
+    dynamic_type::DynamicType,
+    exolvl::Exolvl,
+    function_call::{CallParameter, FunctionCall},
+    image::Image,
+    layer::Layer,
+    level_data::LevelData,
+    local_level::LocalLevel,
+    novascript::{
+        action::Action, activator::Activator, nova_value::NovaValue, parameter::Parameter,
+        static_type::StaticType, variable::Variable, NovaScript,
+    },
+    object::Object,
+    object_property::ObjectProperty,
+    old_script::{OldAction, OldActionProperty, OldActionType, Script},
+    pattern::Pattern,
+    prefab::Prefab,
+    varint::Varint,
+    vec2::Vec2,
+};
+<span class="kw">use </span>chrono::{DateTime, Utc};
 <span class="attr">#[cfg(feature = <span class="string">"image"</span>)]
 </span><span class="kw">use </span>image::DynamicImage;
+<span class="kw">use </span>uuid::Uuid;
 
 <span class="kw">pub trait </span>Sealed {}
 
@@ -78,7 +126,7 @@
 }
 
 <span class="macro">impl_sealed!</span>(
-    <span class="kw">super</span>::Varint,
+    Varint,
     String,
     u32,
     i32,
@@ -86,37 +134,37 @@
     f32,
     bool,
     u8,
-    <span class="kw">super</span>::Exolvl,
-    <span class="kw">super</span>::LocalLevel,
+    Exolvl,
+    LocalLevel,
     DateTime&lt;Utc&gt;,
-    <span class="kw">super</span>::LevelData,
-    <span class="kw">super</span>::Pattern,
-    <span class="kw">super</span>::Prefab,
-    <span class="kw">super</span>::Image,
-    <span class="kw">super</span>::Layer,
-    <span class="kw">super</span>::Vec2,
-    <span class="kw">super</span>::Colour,
-    <span class="kw">super</span>::AuthorReplay,
-    <span class="kw">super</span>::Object,
-    <span class="kw">super</span>::ObjectProperty,
-    <span class="kw">super</span>::Brush,
-    <span class="kw">super</span>::BrushObject,
-    <span class="kw">super</span>::BrushGrid,
-    <span class="kw">super</span>::Script,
-    <span class="kw">super</span>::NovaScript,
-    <span class="kw">super</span>::OldAction,
-    <span class="kw">super</span>::OldActionType,
-    <span class="kw">super</span>::OldActionProperty,
-    <span class="kw">super</span>::Action,
-    <span class="kw">super</span>::ActionType,
-    <span class="kw">super</span>::NovaValue,
-    <span class="kw">super</span>::DynamicType,
-    <span class="kw">super</span>::FunctionCall,
-    <span class="kw">super</span>::CallParameter,
-    <span class="kw">super</span>::Variable,
-    <span class="kw">super</span>::StaticType,
-    <span class="kw">super</span>::Activator,
-    <span class="kw">super</span>::Parameter,
+    LevelData,
+    Pattern,
+    Prefab,
+    Image,
+    Layer,
+    Vec2,
+    Colour,
+    AuthorReplay,
+    Object,
+    ObjectProperty,
+    Brush,
+    BrushObject,
+    BrushGrid,
+    Script,
+    NovaScript,
+    OldAction,
+    OldActionType,
+    OldActionProperty,
+    Action,
+    ActionType,
+    NovaValue,
+    DynamicType,
+    FunctionCall,
+    CallParameter,
+    Variable,
+    StaticType,
+    Activator,
+    Parameter,
     Uuid,
 );
 

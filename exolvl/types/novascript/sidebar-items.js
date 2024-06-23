@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["action","activator","nova_value","parameter","static_type","variable"],"struct":["NovaScript"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["OldActionType"],"struct":["OldAction","OldActionProperty","Script"]};
