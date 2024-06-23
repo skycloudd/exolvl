@@ -1272,7 +1272,7 @@ impl Write for ObjectProperty {
                 value.write(output)
             }
             Self::RestoreVelocity(value) => {
-                32.write(output)?;
+                34.write(output)?;
                 value.write(output)
             }
             Self::Sprite(value) => {
