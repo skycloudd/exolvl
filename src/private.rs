@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use uuid::Uuid;
 #[cfg(feature = "image")]
 use image::DynamicImage;
 
@@ -37,7 +38,11 @@ impl_sealed!(
     super::Brush,
     super::BrushObject,
     super::BrushGrid,
+    super::Script,
     super::NovaScript,
+    super::OldAction,
+    super::OldActionType,
+    super::OldActionProperty,
     super::Action,
     super::ActionType,
     super::NovaValue,
@@ -48,6 +53,7 @@ impl_sealed!(
     super::StaticType,
     super::Activator,
     super::Parameter,
+    Uuid,
 );
 
 #[cfg(feature = "image")]

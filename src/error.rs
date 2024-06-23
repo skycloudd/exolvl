@@ -11,6 +11,8 @@ pub enum Error {
     InvalidStaticType(i32),
     /// The value of an `ObjectPropertyType` is invalid.
     InvalidObjectPropertyType(i32),
+    /// The value of an `OldActionType` is invalid.
+    InvalidOldActionType(i32),
     /// The value of an `ActionType` is invalid.
     InvalidActionType(i32),
     /// An error occurred while reading a LEB128 value.
@@ -31,6 +33,7 @@ impl std::fmt::Display for Error {
             Self::InvalidObjectPropertyType(value) => {
                 write!(f, "invalid object property type: {value}")
             }
+            Self::InvalidOldActionType(value) => write!(f, "invalid old action type: {value}"),
             Self::InvalidActionType(value) => write!(f, "invalid action type: {value}"),
             Self::LebRead(err) => write!(f, "{err}"),
             Self::Io(err) => write!(f, "{err}"),

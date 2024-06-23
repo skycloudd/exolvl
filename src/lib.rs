@@ -17,6 +17,7 @@ use error::Error;
 #[cfg(feature = "image")]
 use image::{DynamicImage, ImageFormat};
 pub use traits::{Read, ReadContext, ReadVersioned, Write};
+use uuid::Uuid;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
@@ -285,6 +286,78 @@ impl Write for Exolvl {
     }
 }
 
+impl Default for Exolvl {
+    fn default() -> Self {
+        let level_id = uuid::Uuid::new_v4();
+        Self { 
+            local_level: LocalLevel { 
+                serialization_version: 18, 
+                level_id: level_id.clone(),
+                level_version: 1,
+                level_name: "New level".to_string(),
+                thumbnail: "".to_string(),
+                creation_date: chrono::Utc::now(),
+                update_date: chrono::Utc::now(),
+                author_time: Default::default(),
+                author_lap_times: Default::default(),
+                silver_medal_time: Default::default(),
+                gold_medal_time: Default::default(),
+                laps: 1,
+                private: Default::default(),
+                nova_level: true,
+            }, 
+            level_data: LevelData { 
+                level_id: level_id,
+                level_version: 1,
+                nova_level: true,
+                under_decoration_tiles: Default::default(),
+                background_decoration_tiles: Default::default(),
+                terrain_tiles: Default::default(),
+                floating_zone_tiles: Default::default(),
+                object_tiles: Default::default(),
+                foreground_decoration_tiles: Default::default(),
+                objects: Default::default(),
+                layers: Default::default(),
+                prefabs: Default::default(),
+                brushes: Default::default(),
+                patterns: Default::default(),
+                colour_palette: Some(Default::default()),
+                author_time: Default::default(),
+                author_lap_times: Default::default(),
+                silver_medal_time: Default::default(),
+                gold_medal_time: Default::default(),
+                laps: 1,
+                center_camera: Default::default(),
+                scripts: Default::default(),
+                nova_scripts: Default::default(),
+                global_variables: Default::default(),
+                theme: "mountains".to_string(),
+                custom_background_colour: Default::default(),
+                unknown1: [0; 4],
+                custom_terrain_pattern_id: Default::default(),
+                custom_terrain_pattern_tiling: Default::default(),
+                custom_terrain_pattern_offset: Default::default(),
+                custom_terrain_colour: Default::default(),
+                custom_terrain_secondary_color: Default::default(),
+                custom_terrain_blend_mode: Default::default(),
+                custom_terrain_border_colour: Default::default(),
+                custom_terrain_border_thickness: Default::default(),
+                custom_terrain_border_corner_radius: Default::default(),
+                custom_terrain_round_reflex_angles: Default::default(),
+                custom_terrain_round_collider: Default::default(),
+                custom_terrain_friction: Default::default(),
+                default_music: true,
+                music_ids: Default::default(),
+                allow_direction_change: Default::default(),
+                disable_replays: Default::default(),
+                disable_revive_pads: Default::default(),
+                disable_start_animation: Default::default(),
+                gravity: Vec2 { x: 0.0, y: -75.0 } 
+            },
+            author_replay: AuthorReplay(Default::default()),
+        }
+    }
+}
 /// The local level data for this level.
 ///
 /// This data is only ever used in the level editor and is not uploaded to the server.
@@ -292,9 +365,11 @@ impl Write for Exolvl {
 #[derive(Clone, Debug, Hash)]
 pub struct LocalLevel {
     /// The version of the exolvl format that this level uses.
+    /// 
+    /// The current latest serialization version is 18.
     pub serialization_version: i32,
     /// The UUID of the level.
-    pub level_id: String,
+    pub level_id: Uuid,
     /// The version of the level e.g. v1, v2, etc.
     pub level_version: i32,
     /// The name of the level.
@@ -318,8 +393,8 @@ pub struct LocalLevel {
     /// Whether this level is private or public.
     pub private: bool,
 
-    /// Unknown data.
-    unknown_1: u8,
+    /// If this is true, the level can be opened in the new level editor. Otherwise it's for the "legacy" editor.
+    pub nova_level: bool,
 }
 
 impl Read for LocalLevel {
@@ -338,7 +413,7 @@ impl Read for LocalLevel {
             gold_medal_time: Read::read(input)?,
             laps: Read::read(input)?,
             private: Read::read(input)?,
-            unknown_1: Read::read(input)?,
+            nova_level: Read::read(input)?,
         })
     }
 }
@@ -358,7 +433,7 @@ impl Write for LocalLevel {
         self.gold_medal_time.write(output)?;
         self.laps.write(output)?;
         self.private.write(output)?;
-        self.unknown_1.write(output)
+        self.nova_level.write(output)
     }
 }
 
@@ -388,12 +463,13 @@ impl Write for chrono::DateTime<chrono::Utc> {
 #[derive(Clone, Debug)]
 pub struct LevelData {
     /// The UUID of the level.
-    pub level_id: String,
+    pub level_id: Uuid,
     /// The version of the level e.g. v1, v2, etc.
     pub level_version: i32,
     /// Whether this level is for the new level editor.
     ///
-    /// If this is true, the level can be opened in the new level editor. Otherwise it's for the "legacy" editor.
+    /// If this is true, the level can be opened in the new level editor. Otherwise it's for the "legacy" editor. 
+    /// This Field is presumably only useful in .level files, not in .exolvl ones. A mismatch with the corresponding LocalLevel field should be avoided.
     pub nova_level: bool,
     /// The tile ids for the "under decoration" layer.
     pub under_decoration_tiles: Vec<i32>,
@@ -451,24 +527,35 @@ pub struct LevelData {
     pub custom_background_colour: Colour,
 
     /// Unknown data.
-    unknown1: [u8; 24],
-
-    /// The custom terrain colour of the level.
+    unknown1: [u8; 4],
+    /// The following terrain related fields are all used when explicitly copying certain terrain data.
+    /// 
+    /// The custom terrain pattern that can be pasted with the colour_paste button if the recieving object has the FillMode set to `Pattern`.
+    pub custom_terrain_pattern_id: i32,
+    /// The tiling of that pattern.
+    pub custom_terrain_pattern_tiling: Vec2,
+    /// the offset of that pattern.
+    pub custom_terrain_pattern_offset: Vec2,
+    /// In the legacy editor: The custom terrain colour of the level.
+    /// In the new editor: The colour of the copied terrain.
     pub custom_terrain_colour: Colour,
-
-    /// Unknown data.
-    unknown_2: [u8; 20],
-
+    /// Not 100% sure of the use of this, presumably the replacement for the border color in the new editor.
+    /// Used when copying and pasting properties of terrain.
+    pub custom_terrain_secondary_color: Colour,
+    /// The blend mode of the copied terrain.
+    pub custom_terrain_blend_mode: i32,
     /// The custom terrain border colour of the level.
     pub custom_terrain_border_colour: Colour,
     /// The thickness of the terrain border.
     pub custom_terrain_border_thickness: f32,
     /// The corner radius of the terrain border.
     pub custom_terrain_border_corner_radius: f32,
-
-    /// Unknown data.
-    pub unknown_3: [u8; 6],
-
+    /// Whether the copied terrain has round reflex angles or not (only visual).
+    pub custom_terrain_round_reflex_angles: bool,
+    /// Whether the copied terrain has a round collider or not (not visual).
+    pub custom_terrain_round_collider: bool,
+    /// The friction of the copied terrain.
+    pub custom_terrain_friction: f32,
     /// Whether the default music should be played or not.
     pub default_music: bool,
     /// The music ids for the level. The game randomly picks one of these to play each time.
@@ -477,7 +564,8 @@ pub struct LevelData {
     pub allow_direction_change: bool,
     /// Whether replays are disabled or not.
     ///
-    /// If this is true, the game won't upload replays on this level.
+    /// If this is true, the game won't upload replays on this level. 
+    /// (unless you explicitly upload blank shells from the history section, that only contain the time you set without any replay data. Could be a bug).
     pub disable_replays: bool,
     /// Whether revive pads are disabled or not.
     pub disable_revive_pads: bool,
@@ -521,12 +609,18 @@ impl ReadVersioned for LevelData {
             theme: Read::read(input)?,
             custom_background_colour: Read::read(input)?,
             unknown1: Read::read(input)?,
+            custom_terrain_pattern_id: Read::read(input)?,
+            custom_terrain_pattern_tiling: Read::read(input)?,
+            custom_terrain_pattern_offset: Read::read(input)?,
             custom_terrain_colour: Read::read(input)?,
-            unknown_2: Read::read(input)?,
+            custom_terrain_secondary_color: Read::read(input)?,
+            custom_terrain_blend_mode: Read::read(input)?,
             custom_terrain_border_colour: Read::read(input)?,
             custom_terrain_border_thickness: Read::read(input)?,
             custom_terrain_border_corner_radius: Read::read(input)?,
-            unknown_3: Read::read(input)?,
+            custom_terrain_round_reflex_angles: Read::read(input)?,
+            custom_terrain_round_collider: Read::read(input)?,
+            custom_terrain_friction: Read::read(input)?,
             default_music: Read::read(input)?,
             music_ids: Read::read(input)?,
             allow_direction_change: Read::read(input)?,
@@ -569,12 +663,18 @@ impl Write for LevelData {
         self.theme.write(output)?;
         self.custom_background_colour.write(output)?;
         self.unknown1.write(output)?;
+        self.custom_terrain_pattern_id.write(output)?;
+        self.custom_terrain_pattern_tiling.write(output)?;
+        self.custom_terrain_pattern_offset.write(output)?;
         self.custom_terrain_colour.write(output)?;
-        self.unknown_2.write(output)?;
+        self.custom_terrain_secondary_color.write(output)?;
+        self.custom_terrain_blend_mode.write(output)?;
         self.custom_terrain_border_colour.write(output)?;
         self.custom_terrain_border_thickness.write(output)?;
         self.custom_terrain_border_corner_radius.write(output)?;
-        self.unknown_3.write(output)?;
+        self.custom_terrain_round_reflex_angles.write(output)?;
+        self.custom_terrain_round_collider.write(output)?;
+        self.custom_terrain_friction.write(output)?;
         self.default_music.write(output)?;
         self.music_ids.write(output)?;
         self.allow_direction_change.write(output)?;
@@ -755,6 +855,15 @@ impl Write for Vec2 {
     }
 }
 
+impl Default for Vec2 {
+    fn default() -> Self {
+        Self {
+            x: 0.0,
+            y: 0.0,
+        }
+    }
+}
+
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Copy, Debug)]
 pub struct Colour {
@@ -781,6 +890,17 @@ impl Write for Colour {
         self.g.write(output)?;
         self.b.write(output)?;
         self.a.write(output)
+    }
+}
+
+impl Default for Colour {
+    fn default() -> Self {
+        Self {
+            r: 0.0,
+            g: 0.0,
+            b: 0.0,
+            a: 1.0,
+        }
     }
 }
 
@@ -885,6 +1005,8 @@ pub enum ObjectProperty {
     Pattern(i32),
     PatternTiling(Vec2),
     PatternOffset(Vec2),
+    Bounce(bool),
+    RestoreVelocity(bool),
     Sprite(String),
     Trigger(bool),
     Health(f32),
@@ -892,11 +1014,46 @@ pub enum ObjectProperty {
     DamageFromDash(bool),
     ReverseDirOnDamage(bool),
     Floating(bool),
+    LinkedObjects(Vec<i32>),
     FlipX(bool),
     FlipY(bool),
     Text(String),
     FontSize(f32),
     EditorColour(Colour),
+    Colour2(Colour),
+    Colour3(Colour),
+    Colour4(Colour),
+    ParticleTexture(String),
+    Duration(f32),
+    Delay(f32),
+    Loop(bool),
+    AutoPlay(bool),
+    LifetimeMin(f32),
+    LifetimeMax(f32),
+    SimulationSpace(i32),
+    Rate(f32),
+    Burst(i32),
+    EmitterShape(i32),
+    EmitterWidth(f32),
+    EmitterHeight(f32),
+    EmitterTotalAngle(f32),
+    SizeMin(f32),
+    SizeMax(f32),
+    SizeOverLifetime(bool),
+    StartSizeMultiplier(f32),
+    EndSizeMultiplier(f32),
+    SpeedMin(f32),
+    SpeedMax(f32),
+    SpeeLimit(f32),
+    SpeedDampen(f32),
+    RotationMin(f32),
+    RotationMax(f32),
+    Rotationspeed(f32),
+    ColourOverLifetime(bool),
+    StartColourMultiplier(Colour),
+    EndColourMultiplier(Colour),
+    GravityMultiplier(f32),
+    AnchorPos(Vec2),
     MoonInnerRadius(f32),
     MoonOffset(f32),
 }
@@ -935,6 +1092,8 @@ impl Read for ObjectProperty {
             26 => Self::Pattern(Read::read(input)?),
             27 => Self::PatternTiling(Read::read(input)?),
             28 => Self::PatternOffset(Read::read(input)?),
+            32 => Self::Bounce(Read::read(input)?),
+            34 => Self::RestoreVelocity(Read::read(input)?),
             35 => Self::Sprite(Read::read(input)?),
             36 => Self::Trigger(Read::read(input)?),
             37 => Self::Health(Read::read(input)?),
@@ -942,14 +1101,49 @@ impl Read for ObjectProperty {
             39 => Self::DamageFromDash(Read::read(input)?),
             40 => Self::ReverseDirOnDamage(Read::read(input)?),
             41 => Self::Floating(Read::read(input)?),
+            42 => Self::LinkedObjects(Read::read(input)?),
             43 => Self::FlipX(Read::read(input)?),
             44 => Self::FlipY(Read::read(input)?),
             45 => Self::Text(Read::read(input)?),
             46 => Self::FontSize(Read::read(input)?),
             47 => Self::EditorColour(Read::read(input)?),
+            48 => Self::Colour2(Read::read(input)?),
+            49 => Self::Colour3(Read::read(input)?),
+            50 => Self::Colour4(Read::read(input)?),
+            51 => Self::ParticleTexture(Read::read(input)?),
+            52 => Self::Duration(Read::read(input)?),
+            53 => Self::Delay(Read::read(input)?),
+            54 => Self::Loop(Read::read(input)?),
+            55 => Self::AutoPlay(Read::read(input)?),
+            56 => Self::LifetimeMin(Read::read(input)?),
+            57 => Self::LifetimeMax(Read::read(input)?),
+            58 => Self::SimulationSpace(Read::read(input)?),
+            59 => Self::Rate(Read::read(input)?),
+            60 => Self::Burst(Read::read(input)?),
+            61 => Self::EmitterShape(Read::read(input)?),
+            62 => Self::EmitterWidth(Read::read(input)?),
+            63 => Self::EmitterHeight(Read::read(input)?),
+            64 => Self::EmitterTotalAngle(Read::read(input)?),
+            65 => Self::SizeMin(Read::read(input)?),
+            66 => Self::SizeMax(Read::read(input)?),
+            67 => Self::SizeOverLifetime(Read::read(input)?),
+            68 => Self::StartSizeMultiplier(Read::read(input)?),
+            69 => Self::EndSizeMultiplier(Read::read(input)?),
+            71 => Self::SpeedMin(Read::read(input)?),
+            72 => Self::SpeedMax(Read::read(input)?),
+            73 => Self::SpeeLimit(Read::read(input)?),
+            74 => Self::SpeedDampen(Read::read(input)?),
+            75 => Self::RotationMin(Read::read(input)?),
+            76 => Self::RotationMax(Read::read(input)?),
+            77 => Self::Rotationspeed(Read::read(input)?),
+            78 => Self::ColourOverLifetime(Read::read(input)?),
+            79 => Self::StartColourMultiplier(Read::read(input)?),
+            80 => Self::EndColourMultiplier(Read::read(input)?),
+            81 => Self::GravityMultiplier(Read::read(input)?),
+            82 => Self::AnchorPos(Read::read(input)?),
             83 => Self::MoonInnerRadius(Read::read(input)?),
             84 => Self::MoonOffset(Read::read(input)?),
-            n => return Err(Error::InvalidObjectPropertyType(n)),
+            n => return Err(crate::error::Error::InvalidObjectPropertyType(n)),
         })
     }
 }
@@ -1073,6 +1267,14 @@ impl Write for ObjectProperty {
                 28.write(output)?;
                 value.write(output)
             }
+            Self::Bounce(value) => {
+                32.write(output)?;
+                value.write(output)
+            }
+            Self::RestoreVelocity(value) => {
+                34.write(output)?;
+                value.write(output)
+            }
             Self::Sprite(value) => {
                 35.write(output)?;
                 value.write(output)
@@ -1101,6 +1303,10 @@ impl Write for ObjectProperty {
                 41.write(output)?;
                 value.write(output)
             }
+            Self::LinkedObjects(value) => {
+                42.write(output)?;
+                value.write(output)
+            }
             Self::FlipX(value) => {
                 43.write(output)?;
                 value.write(output)
@@ -1119,6 +1325,142 @@ impl Write for ObjectProperty {
             }
             Self::EditorColour(value) => {
                 47.write(output)?;
+                value.write(output)
+            }
+            Self::Colour2(value) => {
+                48.write(output)?;
+                value.write(output)
+            }
+            Self::Colour3(value) => {
+                49.write(output)?;
+                value.write(output)
+            }
+            Self::Colour4(value) => {
+                50.write(output)?;
+                value.write(output)
+            }
+            Self::ParticleTexture(value) => {
+                51.write(output)?;
+                value.write(output)
+            }
+            Self::Duration(value) => {
+                52.write(output)?;
+                value.write(output)
+            }
+            Self::Delay(value) => {
+                53.write(output)?;
+                value.write(output)
+            }
+            Self::Loop(value) => {
+                54.write(output)?;
+                value.write(output)
+            }
+            Self::AutoPlay(value) => {
+                55.write(output)?;
+                value.write(output)
+            }
+            Self::LifetimeMin(value) => {
+                56.write(output)?;
+                value.write(output)
+            }
+            Self::LifetimeMax(value) => {
+                57.write(output)?;
+                value.write(output)
+            }
+            Self::SimulationSpace(value) => {
+                58.write(output)?;
+                value.write(output)
+            }
+            Self::Rate(value) => {
+                59.write(output)?;
+                value.write(output)
+            }
+            Self::Burst(value) => {
+                60.write(output)?;
+                value.write(output)
+            }
+            Self::EmitterShape(value) => {
+                61.write(output)?;
+                value.write(output)
+            }
+            Self::EmitterWidth(value) => {
+                62.write(output)?;
+                value.write(output)
+            }
+            Self::EmitterHeight(value) => {
+                63.write(output)?;
+                value.write(output)
+            }
+            Self::EmitterTotalAngle(value) => {
+                64.write(output)?;
+                value.write(output)
+            }
+            Self::SizeMin(value) => {
+                65.write(output)?;
+                value.write(output)
+            }
+            Self::SizeMax(value) => {
+                66.write(output)?;
+                value.write(output)
+            }
+            Self::SizeOverLifetime(value) => {
+                67.write(output)?;
+                value.write(output)
+            }
+            Self::StartSizeMultiplier(value) => {
+                68.write(output)?;
+                value.write(output)
+            }
+            Self::EndSizeMultiplier(value) => {
+                69.write(output)?;
+                value.write(output)
+            }
+            Self::SpeedMin(value) => {
+                71.write(output)?;
+                value.write(output)
+            }
+            Self::SpeedMax(value) => {
+                72.write(output)?;
+                value.write(output)
+            }
+            Self::SpeeLimit(value) => {
+                73.write(output)?;
+                value.write(output)
+            }
+            Self::SpeedDampen(value) => {
+                74.write(output)?;
+                value.write(output)
+            }
+            Self::RotationMin(value) => {
+                75.write(output)?;
+                value.write(output)
+            }
+            Self::RotationMax(value) => {
+                76.write(output)?;
+                value.write(output)
+            }
+            Self::Rotationspeed(value) => {
+                77.write(output)?;
+                value.write(output)
+            }
+            Self::ColourOverLifetime(value) => {
+                78.write(output)?;
+                value.write(output)
+            }
+            Self::StartColourMultiplier(value) => {
+                79.write(output)?;
+                value.write(output)
+            }
+            Self::EndColourMultiplier(value) => {
+                80.write(output)?;
+                value.write(output)
+            }
+            Self::GravityMultiplier(value) => {
+                81.write(output)?;
+                value.write(output)
+            }
+            Self::AnchorPos(value) => {
+                82.write(output)?;
                 value.write(output)
             }
             Self::MoonInnerRadius(value) => {
@@ -1223,6 +1565,164 @@ impl Write for BrushGrid {
     fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         self.x.write(output)?;
         self.y.write(output)
+    }
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
+pub struct Script {
+    pub script_id: uuid::Uuid,
+    pub name: String,
+    pub creation_date: chrono::DateTime<chrono::Utc>,
+    pub actions: Vec<OldAction>,
+}
+
+impl Read for Script {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error>
+        where
+            Self: Sized {
+        Ok(Self { 
+            script_id: Read::read(input)?,
+            name: Read::read(input)?,
+            creation_date: Read::read(input)?,
+            actions: Read::read(input)?,
+        })
+    }
+}
+
+impl Write for Script {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
+        self.script_id.write(output)?;
+        self.name.write(output)?;
+        self.creation_date.write(output)?;
+        self.actions.write(output)
+    }
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
+pub struct OldAction {
+    pub action_type: OldActionType,
+    pub wait: bool,
+    pub properties: Vec<OldActionProperty>,
+}
+
+impl Read for OldAction {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error>
+        where
+            Self: Sized {
+        Ok(Self { 
+            action_type: Read::read(input)?,
+            wait: Read::read(input)?,
+            properties: Read::read(input)?,
+        })
+    }
+}
+
+impl Write for OldAction {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
+        self.action_type.write(output)?;
+        self.wait.write(output)?;
+        self.properties.write(output)
+    }
+}
+
+macro_rules! define_old_action_type {
+    ($($name:ident = $number:expr),*) => {
+        #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+        #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
+        pub enum OldActionType {
+            $($name = $number),*
+        }
+
+        impl TryFrom<i32> for OldActionType {
+            type Error = ();
+
+            fn try_from(value: i32) -> Result<Self, Self::Error> {
+                match value {
+                    $($number => Ok(OldActionType::$name),)*
+                    _ => Err(())
+                }
+            }
+        }
+
+        impl From<&OldActionType> for i32 {
+            fn from(value: &OldActionType) -> Self {
+                match value {
+                    $(OldActionType::$name => $number,)*
+                }
+            }
+        }
+    };
+}
+
+define_old_action_type!(
+    RunScript = 0,
+    StopScripts = 1,
+    Wait = 2,
+    WaitFrames = 3,
+    Move = 4,
+    Jump = 5,
+    Slam = 6,
+    Charge = 7,
+    Scale = 8,
+    Rotate = 9,
+    RotateAround = 10,
+    SetDirection = 11,
+    Activate = 12,
+    Deactivate = 13,
+    PlaySound = 14,
+    PlayMusic = 15,
+    SetCinematic = 16,
+    SetInputEnabled = 17,
+    PanCameraToObject = 18,
+    CameraFollowPlayer = 19,
+    ShowGameText = 20,
+    SetVulnerable = 21,
+    Color = 22,
+    Damage = 23,
+    Kill = 24,
+    Finish = 25,
+    SetGravity = 26,
+    SetVelocity = 27
+);
+
+impl Read for OldActionType {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
+        let value = i32::read(input)?;
+
+        Self::try_from(value).map_err(|()| Error::InvalidDynamicType(value))
+    }
+}
+
+impl Write for OldActionType {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
+        i32::from(self).write(output)
+    }
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
+pub struct OldActionProperty {
+    pub name: String,
+    pub value: String,
+}
+
+impl Read for OldActionProperty {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error>
+        where
+            Self: Sized {
+        Ok(Self { 
+            name: Read::read(input)?,
+            value: Read::read(input)?,
+        })
+    }
+}
+
+impl Write for OldActionProperty {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
+        self.name.write(output)?;
+        self.value.write(output)
     }
 }
 
@@ -1364,7 +1864,7 @@ pub enum ActionType {
     },
     SetColor {
         target_objects: NovaValue,
-        color: NovaValue,
+        colour: NovaValue,
         channel: NovaValue,
         duration: NovaValue,
         easing: NovaValue,
@@ -1378,7 +1878,7 @@ pub enum ActionType {
     },
     SetSecondaryColor {
         target_objects: NovaValue,
-        color: NovaValue,
+        colour: NovaValue,
         duration: NovaValue,
         easing: NovaValue,
     },
@@ -1390,7 +1890,7 @@ pub enum ActionType {
     },
     SetBorderColor {
         target_objects: NovaValue,
-        color: NovaValue,
+        colour: NovaValue,
         duration: NovaValue,
         easing: NovaValue,
     },
@@ -1502,13 +2002,13 @@ pub enum ActionType {
     },
     TransitionIn {
         type_: NovaValue,
-        color: NovaValue,
+        colour: NovaValue,
         duration: NovaValue,
         easing: NovaValue,
     },
     TransitionOut {
         type_: NovaValue,
-        color: NovaValue,
+        colour: NovaValue,
         duration: NovaValue,
         easing: NovaValue,
     },
@@ -1529,6 +2029,17 @@ pub enum ActionType {
     RepeatForEachObject {
         target_objects: NovaValue,
         actions: Vec<Action>,
+    },
+    StopSound {
+        sound_instance: NovaValue, 
+        fade_out: NovaValue
+    },
+    PlayParticleSystem {
+        target_objects: NovaValue
+    },
+    StopParticleSystem {
+        target_objects: NovaValue, 
+        clear: NovaValue
     },
 }
 
@@ -1585,6 +2096,9 @@ impl From<&ActionType> for i32 {
             ActionType::RunFunction { .. } => 47,
             ActionType::SetVariableOverTime { .. } => 48,
             ActionType::RepeatForEachObject { .. } => 49,
+            ActionType::StopSound { .. } => 50,
+            ActionType::PlayParticleSystem { .. } => 51,
+            ActionType::StopParticleSystem { .. } => 52,
         }
     }
 }
@@ -1654,7 +2168,7 @@ impl ReadContext for ActionType {
             },
             12 => Self::SetColor {
                 target_objects: Read::read(input)?,
-                color: Read::read(input)?,
+                colour: Read::read(input)?,
                 channel: Read::read(input)?,
                 duration: Read::read(input)?,
                 easing: Read::read(input)?,
@@ -1668,7 +2182,7 @@ impl ReadContext for ActionType {
             },
             14 => Self::SetSecondaryColor {
                 target_objects: Read::read(input)?,
-                color: Read::read(input)?,
+                colour: Read::read(input)?,
                 duration: Read::read(input)?,
                 easing: Read::read(input)?,
             },
@@ -1680,7 +2194,7 @@ impl ReadContext for ActionType {
             },
             16 => Self::SetBorderColor {
                 target_objects: Read::read(input)?,
-                color: Read::read(input)?,
+                colour: Read::read(input)?,
                 duration: Read::read(input)?,
                 easing: Read::read(input)?,
             },
@@ -1792,13 +2306,13 @@ impl ReadContext for ActionType {
             },
             44 => Self::TransitionIn {
                 type_: Read::read(input)?,
-                color: Read::read(input)?,
+                colour: Read::read(input)?,
                 duration: Read::read(input)?,
                 easing: Read::read(input)?,
             },
             45 => Self::TransitionOut {
                 type_: Read::read(input)?,
-                color: Read::read(input)?,
+                colour: Read::read(input)?,
                 duration: Read::read(input)?,
                 easing: Read::read(input)?,
             },
@@ -1820,6 +2334,18 @@ impl ReadContext for ActionType {
                 target_objects: Read::read(input)?,
                 actions: Read::read(input)?,
             },
+            50 => Self::StopSound { 
+                sound_instance: Read::read(input)?,
+                fade_out: Read::read(input)?,
+            },
+            51 => Self::PlayParticleSystem { 
+                target_objects: Read::read(input)?, 
+            },
+            52 => Self::StopParticleSystem { 
+                target_objects: Read::read(input)?,
+                clear: Read::read(input)?,
+            },
+            
             n => return Err(Error::InvalidActionType(n)),
         })
     }
@@ -1912,13 +2438,13 @@ impl Write for ActionType {
             | Self::Kill { target_objects } => target_objects.write(output),
             Self::SetColor {
                 target_objects,
-                color,
+                colour,
                 channel,
                 duration,
                 easing,
             } => {
                 target_objects.write(output)?;
-                color.write(output)?;
+                colour.write(output)?;
                 channel.write(output)?;
                 duration.write(output)?;
                 easing.write(output)
@@ -1938,12 +2464,12 @@ impl Write for ActionType {
             }
             Self::SetSecondaryColor {
                 target_objects,
-                color,
+                colour,
                 duration,
                 easing,
             } => {
                 target_objects.write(output)?;
-                color.write(output)?;
+                colour.write(output)?;
                 duration.write(output)?;
                 easing.write(output)
             }
@@ -1960,12 +2486,12 @@ impl Write for ActionType {
             }
             Self::SetBorderColor {
                 target_objects,
-                color,
+                colour,
                 duration,
                 easing,
             } => {
                 target_objects.write(output)?;
-                color.write(output)?;
+                colour.write(output)?;
                 duration.write(output)?;
                 easing.write(output)
             }
@@ -2115,23 +2641,23 @@ impl Write for ActionType {
             Self::StopScript { script } => script.write(output),
             Self::TransitionIn {
                 type_,
-                color,
+                colour,
                 duration,
                 easing,
             } => {
                 type_.write(output)?;
-                color.write(output)?;
+                colour.write(output)?;
                 duration.write(output)?;
                 easing.write(output)
             }
             Self::TransitionOut {
                 type_,
-                color,
+                colour,
                 duration,
                 easing,
             } => {
                 type_.write(output)?;
-                color.write(output)?;
+                colour.write(output)?;
                 duration.write(output)?;
                 easing.write(output)
             }
@@ -2162,6 +2688,25 @@ impl Write for ActionType {
             } => {
                 target_objects.write(output)?;
                 actions.write(output)
+            }
+            Self::StopSound { 
+                sound_instance,
+                fade_out 
+            } => {
+                sound_instance.write(output)?;
+                fade_out.write(output)
+            }
+            Self::PlayParticleSystem { 
+                target_objects 
+            } => {
+                target_objects.write(output)
+            }
+            Self::StopParticleSystem { 
+                target_objects, 
+                clear 
+            } => {
+                target_objects.write(output)?;
+                clear.write(output)
             }
         }
     }
@@ -2410,8 +2955,8 @@ define_dynamic_type!(
     ScriptParameter = 165,
     BoolObjectsCollidingWithPoint = 166,
     FloatRoundDecimals = 167,
-    VectorPointerPosition = 168,
-    VectorPointerWorldPosition = 169,
+    VectorPointerPositionDeprecated = 168,
+    VectorPointerWorldPositionDeprecated = 169,
     VectorCollisionPoint = 170,
     VectorCollisionNormal = 171,
     ObjectRepeatObject = 172,
@@ -2422,7 +2967,23 @@ define_dynamic_type!(
     LayerConstant = 177,
     LayerVariable = 178,
     LayerParameter = 179,
-    PointerHeld = 189
+    VectorRotate = 180,
+    IntLastSoundInstance = 181,
+    ObjectSetUnion = 182,
+    ObjectSetIntersection = 183,
+    ObjectSetDifference = 184,
+    ObjectSetRemoveAtIndex = 185,
+    VectorPointerPosition = 186,
+    VectorPointerWorldPosition = 187,
+    BoolPointerDown = 188,
+    BoolPointerHeld = 189,
+    BoolPointerReleased = 190,
+    FloatColourR = 191,
+    FloatColourG = 192,
+    FloatColourB = 193,
+    FloatColourA = 194,
+    StringSubstring = 195,
+    IntStringLength = 196
 );
 
 impl Read for DynamicType {
@@ -2548,7 +3109,7 @@ define_static_type!(
     Int = 1,
     Float = 2,
     String = 3,
-    Color = 4,
+    Colour = 4,
     Vector = 5,
     Sound = 6,
     Music = 7,
@@ -2624,5 +3185,19 @@ impl Write for Parameter {
         self.name.write(output)?;
         self.static_type.write(output)?;
         self.default_value.write(output)
+    }
+}
+
+impl Read for Uuid {
+    fn read(input: &mut impl std::io::Read) -> Result<Self, Error>
+        where
+            Self: Sized {
+        Ok(uuid::Uuid::parse_str(&String::read(input)?).unwrap())
+    }
+}
+
+impl Write for Uuid {
+    fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
+        self.to_string().write(output)
     }
 }
