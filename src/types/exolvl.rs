@@ -51,22 +51,7 @@ impl Default for Exolvl {
     fn default() -> Self {
         let level_id = uuid::Uuid::new_v4();
         Self {
-            local_level: LocalLevel {
-                serialization_version: 18,
-                level_id,
-                level_version: 1,
-                level_name: "New level".to_string(),
-                thumbnail: String::default(),
-                creation_date: chrono::Utc::now(),
-                update_date: chrono::Utc::now(),
-                author_time: Default::default(),
-                author_lap_times: Vec::default(),
-                silver_medal_time: Default::default(),
-                gold_medal_time: Default::default(),
-                laps: 1,
-                private: Default::default(),
-                nova_level: true,
-            },
+            local_level: LocalLevel::default_with_id(level_id),
             level_data: LevelData {
                 level_id,
                 level_version: 1,

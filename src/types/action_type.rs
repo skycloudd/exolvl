@@ -309,6 +309,7 @@ impl From<&ActionType> for i32 {
 impl ReadContext for ActionType {
     type Context = i32;
 
+    #[allow(clippy::too_many_lines)]
     fn read_ctx(input: &mut impl std::io::Read, with: Self::Context) -> Result<Self, Error> {
         Ok(match with {
             0 => Self::Repeat {
@@ -555,6 +556,7 @@ impl ReadContext for ActionType {
 }
 
 impl Write for ActionType {
+    #[allow(clippy::too_many_lines)]
     fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         match self {
             Self::Repeat { actions, count } => {

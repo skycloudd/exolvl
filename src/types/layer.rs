@@ -3,6 +3,7 @@ use crate::{error::Error, Read, Write};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct Layer {
     pub layer_id: i32,
     pub layer_name: String,

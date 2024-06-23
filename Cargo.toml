@@ -21,3 +21,13 @@ uuid = { version = "1.8.0", features = ["v4", "fast-rng", "macro-diagnostics"] }
 [features]
 serde = ["dep:serde", "chrono/serde", "uuid/serde"]
 image = ["dep:image"]
+
+[lints.rust]
+missing_copy_implementations = "warn"
+missing_debug_implementations = "warn"
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+alloc_instead_of_core = "warn"
+std_instead_of_core = "warn"

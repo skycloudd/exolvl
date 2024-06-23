@@ -177,6 +177,7 @@ impl Read for ObjectProperty {
 }
 
 impl Write for ObjectProperty {
+    #[allow(clippy::too_many_lines)]
     fn write(&self, output: &mut impl std::io::Write) -> Result<(), Error> {
         match self {
             Self::Colour(value) => {

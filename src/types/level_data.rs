@@ -14,6 +14,7 @@ use uuid::Uuid;
 /// The level data for an Exoracer level.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct LevelData {
     /// The UUID of the level.
     pub level_id: Uuid,

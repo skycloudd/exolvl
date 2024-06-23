@@ -24,8 +24,8 @@ pub enum Error {
     Image(image::ImageError),
 }
 
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for Error {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::WrongMagic => write!(f, "wrong magic number"),
             Self::InvalidDynamicType(value) => write!(f, "invalid dynamic type: {value}"),

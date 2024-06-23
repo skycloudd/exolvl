@@ -79,3 +79,25 @@ impl Write for LocalLevel {
         self.nova_level.write(output)
     }
 }
+
+impl LocalLevel {
+    #[must_use]
+    pub fn default_with_id(level_id: Uuid) -> Self {
+        Self {
+            serialization_version: 18,
+            level_id,
+            level_version: Default::default(),
+            level_name: String::from("New level"),
+            thumbnail: String::default(),
+            creation_date: chrono::Utc::now(),
+            update_date: chrono::Utc::now(),
+            author_time: Default::default(),
+            author_lap_times: Vec::default(),
+            silver_medal_time: Default::default(),
+            gold_medal_time: Default::default(),
+            laps: 1,
+            private: Default::default(),
+            nova_level: true,
+        }
+    }
+}
