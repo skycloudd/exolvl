@@ -46,7 +46,7 @@ pub trait ReadVersioned: private::Sealed {
 ///
 /// This trait is sealed and cannot be implemented for types outside of this crate.
 pub trait ReadContext: private::Sealed {
-    /// Additional context to pass to `read_with`.
+    /// Additional context to pass to `read_ctx`.
     type Context;
 
     /// Reads a value from a given output. This method takes an additional parameter as context.
