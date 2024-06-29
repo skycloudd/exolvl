@@ -15,7 +15,13 @@ macro_rules! level_tests {
     };
 }
 
-level_tests![(t1, "1.exolvl"), (t2, "2.exolvl"), (t3, "3.exolvl"),];
+level_tests![
+    (t1, "1.exolvl"),
+    (t2, "2.exolvl"),
+    (t3, "3.exolvl"),
+    (t4, "4.exolvl"),
+    (legacy1, "legacy1.exolvl"),
+];
 
 fn inner(in_bytes: &[u8]) {
     let file = Exolvl::read(&mut Cursor::new(in_bytes)).unwrap();
