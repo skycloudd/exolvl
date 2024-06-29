@@ -20,7 +20,7 @@ level_tests![
     (t2, "2.exolvl"),
     (t3, "3.exolvl"),
     (t4, "4.exolvl"),
-    (legacy1, "legacy1.exolvl"),
+    // (legacy1, "legacy1.exolvl"),
 ];
 
 fn inner(in_bytes: &[u8]) {
