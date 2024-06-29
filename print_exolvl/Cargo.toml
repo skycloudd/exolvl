@@ -4,4 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-exolvl = { path = ".." }
+exolvl = { path = "..", features = ["tracing"] }
+tracing-forest = "0.1.6"
+tracing-subscriber = "0.3.18"

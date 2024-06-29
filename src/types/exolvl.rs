@@ -17,8 +17,15 @@ pub struct Exolvl {
 const EXPECTED_MAGIC: &[u8; 4] = b"NYA^";
 
 impl Read for Exolvl {
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(level = "debug", name = "Exolvl::read", skip(input))
+    )]
     fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         let magic: [u8; 4] = Read::read(input)?;
+
+        #[cfg(feature = "tracing")]
+        debug!(?magic);
 
         if &magic != EXPECTED_MAGIC {
             return Err(Error::WrongMagic);

@@ -151,23 +151,109 @@ impl LevelData {
 }
 
 impl ReadVersioned for LevelData {
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(level = "debug", name = "LevelData::read", skip(input))
+    )]
     fn read(input: &mut impl std::io::Read, version: i32) -> Result<Self, Error> {
         Ok(Self {
             level_id: Read::read(input)?,
             level_version: Read::read(input)?,
             nova_level: Read::read(input)?,
-            under_decoration_tiles: Read::read(input)?,
-            background_decoration_tiles: Read::read(input)?,
-            terrain_tiles: Read::read(input)?,
-            floating_zone_tiles: Read::read(input)?,
-            object_tiles: Read::read(input)?,
-            foreground_decoration_tiles: Read::read(input)?,
-            objects: Read::read(input)?,
-            layers: Read::read(input)?,
-            prefabs: Read::read(input)?,
-            brushes: Read::read(input)?,
-            patterns: Read::read(input)?,
+            under_decoration_tiles: {
+                #[cfg(feature = "tracing")]
+                {
+                    let s = debug_span!("under_decoration_tiles");
+                    let _guard = s.enter();
+                }
+                Read::read(input)?
+            },
+            background_decoration_tiles: {
+                #[cfg(feature = "tracing")]
+                {
+                    let s = debug_span!("background_decoration_tiles");
+                    let _guard = s.enter();
+                }
+                Read::read(input)?
+            },
+            terrain_tiles: {
+                #[cfg(feature = "tracing")]
+                {
+                    let s = debug_span!("terrain_tiles");
+                    let _guard = s.enter();
+                }
+                Read::read(input)?
+            },
+            floating_zone_tiles: {
+                #[cfg(feature = "tracing")]
+                {
+                    let s = debug_span!("floating_zone_tiles");
+                    let _guard = s.enter();
+                }
+                Read::read(input)?
+            },
+            object_tiles: {
+                #[cfg(feature = "tracing")]
+                {
+                    let s = debug_span!("object_tiles");
+                    let _guard = s.enter();
+                }
+                Read::read(input)?
+            },
+            foreground_decoration_tiles: {
+                #[cfg(feature = "tracing")]
+                {
+                    let s = debug_span!("foreground_decoration_tiles");
+                    let _guard = s.enter();
+                }
+                Read::read(input)?
+            },
+            objects: {
+                #[cfg(feature = "tracing")]
+                {
+                    let s = debug_span!("objects");
+                    let _guard = s.enter();
+                }
+                Read::read(input)?
+            },
+            layers: {
+                #[cfg(feature = "tracing")]
+                {
+                    let s = debug_span!("layers");
+                    let _guard = s.enter();
+                }
+                Read::read(input)?
+            },
+            prefabs: {
+                #[cfg(feature = "tracing")]
+                {
+                    let s = debug_span!("prefabs");
+                    let _guard = s.enter();
+                }
+                Read::read(input)?
+            },
+            brushes: {
+                #[cfg(feature = "tracing")]
+                {
+                    let s = debug_span!("brushes");
+                    let _guard = s.enter();
+                }
+                Read::read(input)?
+            },
+            patterns: {
+                #[cfg(feature = "tracing")]
+                {
+                    let s = debug_span!("patterns");
+                    let _guard = s.enter();
+                }
+                Read::read(input)?
+            },
             color_palette: if version >= 17 {
+                #[cfg(feature = "tracing")]
+                {
+                    let s = debug_span!("color_palette");
+                    let _guard = s.enter();
+                }
                 Some(Read::read(input)?)
             } else {
                 None
@@ -178,9 +264,30 @@ impl ReadVersioned for LevelData {
             gold_medal_time: Read::read(input)?,
             laps: Read::read(input)?,
             center_camera: Read::read(input)?,
-            scripts: Read::read(input)?,
-            nova_scripts: Read::read(input)?,
-            global_variables: Read::read(input)?,
+            scripts: {
+                #[cfg(feature = "tracing")]
+                {
+                    let s = debug_span!("scripts");
+                    let _guard = s.enter();
+                }
+                Read::read(input)?
+            },
+            nova_scripts: {
+                #[cfg(feature = "tracing")]
+                {
+                    let s = debug_span!("nova_scripts");
+                    let _guard = s.enter();
+                }
+                Read::read(input)?
+            },
+            global_variables: {
+                #[cfg(feature = "tracing")]
+                {
+                    let s = debug_span!("global_variables");
+                    let _guard = s.enter();
+                }
+                Read::read(input)?
+            },
             theme: Read::read(input)?,
             custom_background_color: Read::read(input)?,
             unknown1: Read::read(input)?,

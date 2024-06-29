@@ -5,6 +5,10 @@ use crate::{error::Error, Read, Write};
 pub struct AuthorReplay(pub Vec<u8>);
 
 impl Read for AuthorReplay {
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(level = "debug", name = "AuthorReplay::read", skip(input))
+    )]
     fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self(Read::read(input)?))
     }

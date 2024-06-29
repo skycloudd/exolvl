@@ -103,8 +103,15 @@ impl Write for f32 {
 }
 
 impl<T: Read> Read for Vec<T> {
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(level = "debug", name = "Vec::read", skip(input))
+    )]
     fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         let len = usize::try_from(i32::read(input)?).unwrap();
+
+        #[cfg(feature = "tracing")]
+        debug!(?len);
 
         let mut vec = Self::with_capacity(len);
 
@@ -227,6 +234,10 @@ impl Write for chrono::DateTime<chrono::Utc> {
 }
 
 impl Read for Uuid {
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(level = "debug", name = "Uuid::read", skip(input))
+    )]
     fn read(input: &mut impl std::io::Read) -> Result<Self, Error>
     where
         Self: Sized,

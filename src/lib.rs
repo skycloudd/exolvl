@@ -12,3 +12,7 @@ mod traits;
 pub mod types;
 
 pub use traits::{Read, ReadContext, ReadVersioned, Write};
+
+#[cfg(feature = "tracing")]
+#[macro_use]
+extern crate tracing;

@@ -41,6 +41,10 @@ pub struct LocalLevel {
 }
 
 impl Read for LocalLevel {
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(level = "debug", name = "LocalLevel::read", skip(input))
+    )]
     fn read(input: &mut impl std::io::Read) -> Result<Self, Error> {
         Ok(Self {
             serialization_version: Read::read(input)?,
