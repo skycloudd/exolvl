@@ -252,6 +252,17 @@
 <a href="#252" id="252">252</a>
 <a href="#253" id="253">253</a>
 <a href="#254" id="254">254</a>
+<a href="#255" id="255">255</a>
+<a href="#256" id="256">256</a>
+<a href="#257" id="257">257</a>
+<a href="#258" id="258">258</a>
+<a href="#259" id="259">259</a>
+<a href="#260" id="260">260</a>
+<a href="#261" id="261">261</a>
+<a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{error::Error, types::varint::Varint, Read, Write};
 <span class="kw">use </span>cs_datetime_parse::DateTimeCs;
 <span class="kw">use </span>ordered_float::OrderedFloat;
@@ -357,8 +368,15 @@
 }
 
 <span class="kw">impl</span>&lt;T: Read&gt; Read <span class="kw">for </span>Vec&lt;T&gt; {
-    <span class="kw">fn </span>read(input: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>std::io::Read) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, Error&gt; {
+    <span class="attr">#[cfg_attr(
+        feature = <span class="string">"tracing"</span>,
+        tracing::instrument(level = <span class="string">"debug"</span>, name = <span class="string">"Vec::read"</span>, skip(input))
+    )]
+    </span><span class="kw">fn </span>read(input: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>std::io::Read) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, Error&gt; {
         <span class="kw">let </span>len = usize::try_from(i32::read(input)<span class="question-mark">?</span>).unwrap();
+
+        <span class="attr">#[cfg(feature = <span class="string">"tracing"</span>)]
+        </span><span class="macro">debug!</span>(<span class="question-mark">?</span>len);
 
         <span class="kw">let </span><span class="kw-2">mut </span>vec = <span class="self">Self</span>::with_capacity(len);
 
@@ -481,7 +499,11 @@
 }
 
 <span class="kw">impl </span>Read <span class="kw">for </span>Uuid {
-    <span class="kw">fn </span>read(input: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>std::io::Read) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, Error&gt;
+    <span class="attr">#[cfg_attr(
+        feature = <span class="string">"tracing"</span>,
+        tracing::instrument(level = <span class="string">"debug"</span>, name = <span class="string">"Uuid::read"</span>, skip(input))
+    )]
+    </span><span class="kw">fn </span>read(input: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>std::io::Read) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, Error&gt;
     <span class="kw">where
         </span><span class="self">Self</span>: Sized,
     {

@@ -56,6 +56,13 @@
 <a href="#56" id="56">56</a>
 <a href="#57" id="57">57</a>
 <a href="#58" id="58">58</a>
+<a href="#59" id="59">59</a>
+<a href="#60" id="60">60</a>
+<a href="#61" id="61">61</a>
+<a href="#62" id="62">62</a>
+<a href="#63" id="63">63</a>
+<a href="#64" id="64">64</a>
+<a href="#65" id="65">65</a>
 </pre></div><pre class="rust"><code><span class="kw">use super</span>::{author_replay::AuthorReplay, level_data::LevelData, local_level::LocalLevel};
 <span class="kw">use crate</span>::{error::Error, Read, ReadVersioned, Write};
 <span class="kw">use </span>uuid::Uuid;
@@ -75,8 +82,15 @@
 <span class="kw">const </span>EXPECTED_MAGIC: <span class="kw-2">&amp;</span>[u8; <span class="number">4</span>] = <span class="string">b"NYA^"</span>;
 
 <span class="kw">impl </span>Read <span class="kw">for </span>Exolvl {
-    <span class="kw">fn </span>read(input: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>std::io::Read) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, Error&gt; {
+    <span class="attr">#[cfg_attr(
+        feature = <span class="string">"tracing"</span>,
+        tracing::instrument(level = <span class="string">"debug"</span>, name = <span class="string">"Exolvl::read"</span>, skip(input))
+    )]
+    </span><span class="kw">fn </span>read(input: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>std::io::Read) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, Error&gt; {
         <span class="kw">let </span>magic: [u8; <span class="number">4</span>] = Read::read(input)<span class="question-mark">?</span>;
+
+        <span class="attr">#[cfg(feature = <span class="string">"tracing"</span>)]
+        </span><span class="macro">debug!</span>(<span class="question-mark">?</span>magic);
 
         <span class="kw">if </span><span class="kw-2">&amp;</span>magic != EXPECTED_MAGIC {
             <span class="kw">return </span><span class="prelude-val">Err</span>(Error::WrongMagic);

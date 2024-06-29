@@ -15,6 +15,10 @@
 <a href="#15" id="15">15</a>
 <a href="#16" id="16">16</a>
 <a href="#17" id="17">17</a>
+<a href="#18" id="18">18</a>
+<a href="#19" id="19">19</a>
+<a href="#20" id="20">20</a>
+<a href="#21" id="21">21</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{error::Error, Read, Write};
 
 <span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, derive(serde::Serialize, serde::Deserialize))]
@@ -22,7 +26,11 @@
 </span><span class="kw">pub struct </span>AuthorReplay(<span class="kw">pub </span>Vec&lt;u8&gt;);
 
 <span class="kw">impl </span>Read <span class="kw">for </span>AuthorReplay {
-    <span class="kw">fn </span>read(input: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>std::io::Read) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, Error&gt; {
+    <span class="attr">#[cfg_attr(
+        feature = <span class="string">"tracing"</span>,
+        tracing::instrument(level = <span class="string">"debug"</span>, name = <span class="string">"AuthorReplay::read"</span>, skip(input))
+    )]
+    </span><span class="kw">fn </span>read(input: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>std::io::Read) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, Error&gt; {
         <span class="prelude-val">Ok</span>(<span class="self">Self</span>(Read::read(input)<span class="question-mark">?</span>))
     }
 }

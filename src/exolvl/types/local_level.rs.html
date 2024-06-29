@@ -97,6 +97,10 @@
 <a href="#97" id="97">97</a>
 <a href="#98" id="98">98</a>
 <a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{error::Error, Read, Write};
 <span class="kw">use </span>uuid::Uuid;
 
@@ -140,7 +144,11 @@
 }
 
 <span class="kw">impl </span>Read <span class="kw">for </span>LocalLevel {
-    <span class="kw">fn </span>read(input: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>std::io::Read) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, Error&gt; {
+    <span class="attr">#[cfg_attr(
+        feature = <span class="string">"tracing"</span>,
+        tracing::instrument(level = <span class="string">"debug"</span>, name = <span class="string">"LocalLevel::read"</span>, skip(input))
+    )]
+    </span><span class="kw">fn </span>read(input: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>std::io::Read) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, Error&gt; {
         <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
             serialization_version: Read::read(input)<span class="question-mark">?</span>,
             level_id: Read::read(input)<span class="question-mark">?</span>,
