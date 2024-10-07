@@ -14,7 +14,7 @@ exclude = [".github/*"]
 [dependencies]
 chrono = "0.4"
 cs-datetime-parse = "1.1.0"
-flate2 = "1.0.33"
+flate2 = "1.0.34"
 image = { version = "0.25", optional = true }
 leb128 = "0.2"
 ordered-float = "4.2.2"
