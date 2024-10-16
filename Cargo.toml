@@ -21,7 +21,7 @@ ordered-float = "4.3.0"
 serde = { version = "1.0", features = ["derive"], optional = true }
 time = "0.3.36"
 tracing = { version = "0.1.40", optional = true }
-uuid = { version = "1.10.0", features = ["v4", "fast-rng", "macro-diagnostics"] }
+uuid = { version = "1.11.0", features = ["v4", "fast-rng", "macro-diagnostics"] }
 
 [dev-dependencies]
 concat-idents = "1.1.5"
