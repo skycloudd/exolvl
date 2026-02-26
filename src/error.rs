@@ -46,7 +46,7 @@ impl core::fmt::Display for Error {
     }
 }
 
-impl std::error::Error for Error {}
+impl core::error::Error for Error {}
 
 impl From<leb128::read::Error> for Error {
     fn from(err: leb128::read::Error) -> Self {

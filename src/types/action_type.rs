@@ -673,6 +673,12 @@ impl Write for ActionType {
                 color,
                 duration,
                 easing,
+            }
+            | Self::SetBorderColor {
+                target_objects,
+                color,
+                duration,
+                easing,
             } => {
                 target_objects.write(output)?;
                 color.write(output)?;
@@ -684,24 +690,8 @@ impl Write for ActionType {
                 transparency,
                 duration,
                 easing,
-            } => {
-                target_objects.write(output)?;
-                transparency.write(output)?;
-                duration.write(output)?;
-                easing.write(output)
             }
-            Self::SetBorderColor {
-                target_objects,
-                color,
-                duration,
-                easing,
-            } => {
-                target_objects.write(output)?;
-                color.write(output)?;
-                duration.write(output)?;
-                easing.write(output)
-            }
-            Self::SetBorderTransparency {
+            | Self::SetBorderTransparency {
                 target_objects,
                 transparency,
                 duration,
@@ -759,7 +749,8 @@ impl Write for ActionType {
                 duration.write(output)?;
                 easing.write(output)
             }
-            Self::CameraZoomReset { duration, easing } => {
+            Self::CameraZoomReset { duration, easing }
+            | Self::CameraOffsetReset { duration, easing } => {
                 duration.write(output)?;
                 easing.write(output)
             }
@@ -769,10 +760,6 @@ impl Write for ActionType {
                 easing,
             } => {
                 offset.write(output)?;
-                duration.write(output)?;
-                easing.write(output)
-            }
-            Self::CameraOffsetReset { duration, easing } => {
                 duration.write(output)?;
                 easing.write(output)
             }
@@ -850,13 +837,8 @@ impl Write for ActionType {
                 color,
                 duration,
                 easing,
-            } => {
-                type_.write(output)?;
-                color.write(output)?;
-                duration.write(output)?;
-                easing.write(output)
             }
-            Self::TransitionOut {
+            | Self::TransitionOut {
                 type_,
                 color,
                 duration,

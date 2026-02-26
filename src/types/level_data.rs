@@ -155,6 +155,7 @@ impl ReadVersioned for LevelData {
         feature = "tracing",
         tracing::instrument(level = "debug", name = "LevelData::read", skip(input))
     )]
+    #[allow(clippy::too_many_lines)]
     fn read(input: &mut impl std::io::Read, version: i32) -> Result<Self, Error> {
         Ok(Self {
             level_id: Read::read(input)?,
