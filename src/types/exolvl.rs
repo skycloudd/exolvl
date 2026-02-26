@@ -1,5 +1,5 @@
 use super::{author_replay::AuthorReplay, level_data::LevelData, local_level::LocalLevel};
-use crate::{error::Error, Read, ReadVersioned, Write};
+use crate::{Read, ReadVersioned, Write, error::Error};
 use uuid::Uuid;
 
 /// A full Exoracer level.

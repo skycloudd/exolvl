@@ -1,4 +1,4 @@
-use crate::{error::Error, Read, Write};
+use crate::{Read, Write, error::Error};
 use uuid::Uuid;
 
 /// The local level data for this level.

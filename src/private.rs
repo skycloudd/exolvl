@@ -11,8 +11,8 @@ use crate::types::{
     level_data::LevelData,
     local_level::LocalLevel,
     novascript::{
-        action::Action, activator::Activator, nova_value::NovaValue, parameter::Parameter,
-        static_type::StaticType, variable::Variable, NovaScript,
+        NovaScript, action::Action, activator::Activator, nova_value::NovaValue,
+        parameter::Parameter, static_type::StaticType, variable::Variable,
     },
     object::Object,
     object_property::ObjectProperty,

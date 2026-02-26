@@ -2,14 +2,14 @@ use super::{
     brush::Brush,
     color::Color,
     layer::Layer,
-    novascript::{variable::Variable, NovaScript},
+    novascript::{NovaScript, variable::Variable},
     object::Object,
     pattern::Pattern,
     prefab::Prefab,
     theme::Theme,
     vec2::Vec2,
 };
-use crate::{error::Error, Read, ReadVersioned, Write};
+use crate::{Read, ReadVersioned, Write, error::Error};
 use ordered_float::OrderedFloat;
 use uuid::Uuid;
 

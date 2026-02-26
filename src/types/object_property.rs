@@ -1,5 +1,5 @@
 use super::{color::Color, vec2::Vec2};
-use crate::{error::Error, Read, Write};
+use crate::{Read, Write, error::Error};
 use ordered_float::OrderedFloat;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

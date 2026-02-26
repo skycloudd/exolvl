@@ -1,4 +1,4 @@
-use crate::{error::Error, types::varint::Varint, Read, Write};
+use crate::{Read, Write, error::Error, types::varint::Varint};
 use cs_datetime_parse::DateTimeCs;
 use ordered_float::OrderedFloat;
 use uuid::Uuid;

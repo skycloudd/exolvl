@@ -1,4 +1,4 @@
-use crate::{error::Error, Read, Write};
+use crate::{Read, Write, error::Error};
 
 macro_rules! define_dynamic_type {
     ($($name:ident = $number:expr),*) => {

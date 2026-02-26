@@ -1,7 +1,7 @@
 use crate::{
+    Read, Write,
     error::Error,
     types::{color::Color, dynamic_type::DynamicType, vec2::Vec2},
-    Read, Write,
 };
 use ordered_float::OrderedFloat;
 

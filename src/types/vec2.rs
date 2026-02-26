@@ -1,6 +1,6 @@
 use ordered_float::OrderedFloat;
 
-use crate::{error::Error, Read, Write};
+use crate::{Read, Write, error::Error};
 
 /// A 2D vector.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

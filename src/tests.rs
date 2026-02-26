@@ -1,4 +1,4 @@
-use crate::{gzip::extract, types::exolvl::Exolvl, Read, Write};
+use crate::{Read, Write, gzip::extract, types::exolvl::Exolvl};
 use difference::assert_diff;
 use std::io::Cursor;
 

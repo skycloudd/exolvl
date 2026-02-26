@@ -1,4 +1,4 @@
-use crate::{error::Error, Read, Write};
+use crate::{Read, Write, error::Error};
 #[cfg(feature = "image")]
 use image::{DynamicImage, ImageFormat, RgbaImage};
 

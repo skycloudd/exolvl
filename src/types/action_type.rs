@@ -2,7 +2,7 @@ use super::{
     function_call::FunctionCall,
     novascript::{action::Action, nova_value::NovaValue},
 };
-use crate::{error::Error, Read, ReadContext, Write};
+use crate::{Read, ReadContext, Write, error::Error};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]

@@ -1,4 +1,4 @@
-use crate::{error::Error, Read, Write};
+use crate::{Read, Write, error::Error};
 use action::Action;
 use activator::Activator;
 use nova_value::NovaValue;
